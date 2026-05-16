@@ -35,10 +35,14 @@ export class Sequencer {
     const session = this.runtime.getSession();
     this.rowsEl.innerHTML = "";
     if (!session) return;
+    let tIdx = 0;
     for (const t of session.tracks) {
       for (const v of t.voices) {
-        this.rowsEl.appendChild(this.makeRow(t.name, v));
+        const row = this.makeRow(t.name, v);
+        row.classList.add(`track-${tIdx % 6}`);
+        this.rowsEl.appendChild(row);
       }
+      tIdx++;
     }
   }
 

@@ -9,6 +9,9 @@
   --accent: #ffb454;
   --accent-2: #65d6ff;
   --accent-3: #b794ff;
+  --accent-4: #7ee787;
+  --accent-5: #ff85b3;
+  --accent-6: #f29b71;
   --danger: #ff6b6b;
   --ok: #7ee787;
   --mono: ui-monospace, SFMono-Regular, "JetBrains Mono", Menlo, Consolas, monospace;
@@ -30,45 +33,72 @@ body {
   -webkit-tap-highlight-color: rgba(255, 180, 84, 0.2);
 }
 
+.boot-error {
+  position: fixed;
+  inset: 16px;
+  background: rgba(255, 107, 107, 0.95);
+  color: #fff;
+  padding: 16px;
+  border-radius: 8px;
+  font-family: var(--mono);
+  font-size: 12px;
+  z-index: 9999;
+  white-space: pre-wrap;
+  overflow: auto;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+
 /* ─── Topbar ───────────────────────────────────────────────── */
 .topbar {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 16px;
   padding: 10px 14px;
   padding-top: max(10px, env(safe-area-inset-top));
   background: var(--bg-2);
   border-bottom: 1px solid var(--border);
   flex-wrap: wrap;
 }
-.brand { font-family: var(--mono); margin: 0; font-size: 18px; letter-spacing: 1px; }
+.brand {
+  font-family: var(--mono);
+  margin: 0;
+  font-size: 18px;
+  letter-spacing: 1px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.brand-icon { width: 36px; height: 18px; color: var(--accent); }
 .brand .dot { color: var(--accent); }
 
-.controls { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-.prefs {
-  margin-left: auto;
-  display: flex;
+.section {
+  display: inline-flex;
   align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
+  gap: 8px;
+  padding: 4px 10px;
+  background: var(--bg-3);
+  border: 1px solid var(--border);
+  border-radius: 8px;
 }
-.prefs label {
+.section.transport-section { border-color: var(--accent); }
+.section.tempo-section .bpm-num { color: var(--text); font-weight: 700; min-width: 28px; text-align: right; font-family: var(--mono); }
+.section.tempo-section label {
   display: inline-flex;
   align-items: center;
   gap: 6px;
   color: var(--text-dim);
   font-size: 12px;
 }
-.bpm {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  color: var(--text-dim);
-  font-family: var(--mono);
+.section.tempo-section input[type="range"] {
+  width: 130px;
+  height: 28px;
+  accent-color: var(--accent);
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  border: none;
 }
-.bpm #bpm-display { color: var(--text); font-weight: 600; min-width: 28px; text-align: right; }
-.bpm #bpm-slider { width: 110px; height: 28px; accent-color: var(--accent); margin: 0; }
-.bpm .tap {
+.section.tempo-section .tap {
   padding: 6px 10px;
   font-size: 11px;
   letter-spacing: 1px;
@@ -76,9 +106,22 @@ body {
   min-height: 32px;
   min-width: 44px;
 }
-.bpm .tap:active { background: var(--accent); color: #1a120a; border-color: var(--accent); }
+.section.tempo-section .tap:active {
+  background: var(--accent);
+  color: #1a120a;
+  border-color: var(--accent);
+}
 
-button, select, input[type="range"] {
+.prefs-section { margin-left: auto; flex-wrap: wrap; }
+.prefs-section label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-dim);
+  font-size: 12px;
+}
+
+button, select {
   background: var(--bg-3);
   color: var(--text);
   border: 1px solid var(--border);
@@ -90,7 +133,6 @@ button, select, input[type="range"] {
   min-height: var(--tap);
   touch-action: manipulation;
 }
-input[type="range"] { padding: 0; }
 button:hover, select:hover { border-color: var(--accent); }
 button:active { transform: scale(0.98); }
 button.primary { background: var(--accent); color: #1a120a; border-color: var(--accent); font-weight: 600; }
@@ -114,6 +156,31 @@ button.flash {
   color: #062810 !important;
   border-color: var(--ok) !important;
   transition: background 0.15s;
+}
+
+/* Step indicator */
+.step-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  background: var(--bg-2);
+  border-radius: 4px;
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--text-dim);
+}
+.step-indicator .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--text-dim);
+  transition: background 0.1s;
+}
+.step-indicator.active .dot { background: var(--ok); animation: blink 0.5s ease-in-out infinite; }
+@keyframes blink {
+  0%, 100% { opacity: 0.4; }
+  50%      { opacity: 1; }
 }
 
 .warn {
@@ -264,7 +331,7 @@ button.flash {
   border-radius: 3px;
 }
 
-/* ─── Grid ─────────────────────────────────────────────────── */
+/* ─── Pattern Grid ─────────────────────────────────────────── */
 .grid {
   display: grid;
   grid-template-columns: repeat(16, 1fr);
@@ -292,7 +359,7 @@ button.flash {
 .sequencer { display: flex; flex-direction: column; gap: 4px; font-family: var(--mono); }
 .seq-header, .seq-row {
   display: grid;
-  grid-template-columns: 100px minmax(0, 1fr);
+  grid-template-columns: 110px minmax(0, 1fr);
   gap: 6px;
   align-items: center;
 }
@@ -328,13 +395,20 @@ button.flash {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--bg-2);
+  color: transparent;
   overflow: hidden;
 }
 .seq-cell.beat { border-color: #3a3e48; }
-.seq-cell.on { background: var(--accent); border-color: var(--accent); color: #1a120a; }
 .seq-cell.with-note { font-size: 9px; font-weight: 600; }
 .seq-cell.playing { box-shadow: inset 0 0 0 2px var(--accent-2); }
+
+/* Colores por índice de pista — el JS le pone la clase track-N al row */
+.seq-row.track-0 .seq-cell.on { background: var(--accent);   border-color: var(--accent);   color: #1a120a; }
+.seq-row.track-1 .seq-cell.on { background: var(--accent-2); border-color: var(--accent-2); color: #061018; }
+.seq-row.track-2 .seq-cell.on { background: var(--accent-3); border-color: var(--accent-3); color: #160c2a; }
+.seq-row.track-3 .seq-cell.on { background: var(--accent-4); border-color: var(--accent-4); color: #062810; }
+.seq-row.track-4 .seq-cell.on { background: var(--accent-5); border-color: var(--accent-5); color: #2a0617; }
+.seq-row.track-5 .seq-cell.on { background: var(--accent-6); border-color: var(--accent-6); color: #2a1606; }
 
 /* ─── Mixer ────────────────────────────────────────────────── */
 .mixer { display: flex; flex-direction: column; gap: 10px; }
@@ -390,31 +464,24 @@ button.flash {
     padding-top: max(8px, env(safe-area-inset-top));
   }
   .brand { font-size: 16px; }
+  .brand-icon { width: 30px; height: 15px; }
   button.primary.big { padding: 10px 18px; font-size: 14px; min-width: 80px; }
 
-  .controls { gap: 8px; flex-wrap: wrap; }
-  .bpm { width: 100%; justify-content: space-between; }
-  .bpm #bpm-slider { flex: 1; min-width: 80px; }
-
-  .prefs {
-    margin-left: 0;
-    width: 100%;
-    order: 5;
-    justify-content: flex-start;
-    gap: 8px;
-  }
-  .prefs label { font-size: 11px; gap: 4px; flex: 1; min-width: 130px; }
-  .prefs select { flex: 1; padding: 8px; font-size: 12px; min-width: 90px; }
-
-  .editor-toolbar {
+  .section {
     padding: 6px 8px;
     gap: 6px;
+    flex-wrap: wrap;
   }
-  .editor-toolbar .hint {
-    flex-basis: 100%;
-    margin: 0;
-    font-size: 11px;
-  }
+  .section.tempo-section { width: 100%; justify-content: space-between; }
+  .section.tempo-section input[type="range"] { flex: 1; min-width: 80px; width: auto; }
+
+  .prefs-section { margin-left: 0; width: 100%; }
+  .prefs-section label { font-size: 11px; flex: 1 1 130px; min-width: 110px; }
+  .prefs-section select { flex: 1; padding: 8px; font-size: 12px; min-width: 90px; }
+  .prefs-section button { flex: 1 1 100%; }
+
+  .editor-toolbar { padding: 6px 8px; gap: 6px; }
+  .editor-toolbar .hint { flex-basis: 100%; margin: 0; font-size: 11px; }
   .editor-toolbar select { flex: 1; min-width: 100px; }
 
   #editor { padding: 12px; font-size: 13px; min-height: 220px; }
@@ -427,7 +494,7 @@ button.flash {
   .grid .cell { min-height: 38px; border-radius: 6px; }
 
   /* Sequencer: labels más estrechos */
-  .seq-header, .seq-row { grid-template-columns: 70px minmax(0, 1fr); gap: 4px; }
+  .seq-header, .seq-row { grid-template-columns: 80px minmax(0, 1fr); gap: 4px; }
   .seq-cells { gap: 1px; }
   .seq-cell { height: 22px; font-size: 8px; }
   .seq-num { font-size: 8px; }

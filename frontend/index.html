@@ -5,98 +5,140 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#0e0f12" />
   <title>Pulso — live coding musical</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="apple-touch-icon" href="/favicon.svg" />
   <link rel="stylesheet" href="/styles.css" />
 </head>
 <body>
-  <header class="topbar">
-    <h1 class="brand">pulso<span class="dot">.</span></h1>
+  <pre id="boot-error" class="boot-error hidden"></pre>
 
-    <div class="controls">
-      <button id="btn-play" class="primary big" data-i18n="play">Tocar</button>
-      <button id="btn-eval" data-i18n="evaluate">Evaluar</button>
-      <span class="bpm">
-        <label for="bpm-slider" data-i18n="bpm">BPM</label>
-        <input id="bpm-slider" type="range" min="40" max="220" step="1" value="120" />
-        <span id="bpm-display">120</span>
-        <button id="btn-tap" class="tap" title="Tap tempo">TAP</button>
+  <header class="topbar">
+    <h1 class="brand" title="Pulso — live coding musical">
+      <svg viewBox="0 0 64 32" class="brand-icon" aria-hidden="true">
+        <path d="M2 16 L14 16 L18 6 L24 26 L30 4 L36 28 L42 14 L46 16 L62 16"
+              fill="none" stroke="currentColor" stroke-width="3"
+              stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      pulso<span class="dot">.</span>
+    </h1>
+
+    <div class="section transport-section" role="group" aria-label="Transport">
+      <button id="btn-play" class="primary big"
+              title="Reproducir/Detener (atajo: barra espaciadora)"
+              data-i18n="play">Tocar</button>
+      <button id="btn-eval"
+              title="Re-evaluar el código del editor sin parar la música (atajo: Ctrl+Enter)"
+              data-i18n="evaluate">Evaluar</button>
+      <span class="step-indicator" id="step-indicator" title="Paso actual del ciclo">
+        <span class="dot"></span>
+        <span id="step-text">listo</span>
       </span>
     </div>
 
-    <div class="prefs">
-      <label>
+    <div class="section tempo-section" role="group" aria-label="Tempo">
+      <label for="bpm-slider" title="Pulsaciones por minuto (40-220)">
+        <span data-i18n="bpm">BPM</span>
+        <span id="bpm-display" class="bpm-num">120</span>
+      </label>
+      <input id="bpm-slider" type="range" min="40" max="220" step="1" value="120"
+             title="Arrastra para cambiar el tempo en vivo" />
+      <button id="btn-tap" class="tap"
+              title="Toca al ritmo (4+ veces) para fijar el BPM por pulsación">TAP</button>
+    </div>
+
+    <div class="section prefs-section">
+      <label title="Carga un ejemplo listo para tocar">
         <span data-i18n="examples">Ejemplos</span>
         <select id="sel-examples" aria-label="examples"></select>
       </label>
-      <label>
+      <label title="Cómo se muestran las notas: anglo (C D E) o latino/solfeo (DO RE MI)">
         <span data-i18n="notation">Notación</span>
         <select id="sel-notation">
           <option value="anglo">C D E</option>
           <option value="latina">DO RE MI</option>
         </select>
       </label>
-      <label>
+      <label title="Idioma de la interfaz">
         <span data-i18n="lang">Idioma</span>
         <select id="sel-lang">
           <option value="es">ES</option>
           <option value="en">EN</option>
         </select>
       </label>
-      <button id="btn-export-midi" data-i18n="exportMidi">Export MIDI</button>
+      <button id="btn-export-midi"
+              title="Descarga la sesión como archivo .mid (4 ciclos = 16 beats); abre en cualquier DAW"
+              data-i18n="exportMidi">Export MIDI</button>
     </div>
 
-    <span id="ctx-warning" class="hidden warn" data-i18n="ctxSuspended">Toca cualquier botón para activar el audio</span>
+    <span id="ctx-warning" class="hidden warn" data-i18n="ctxSuspended"
+          title="Los navegadores móviles bloquean el audio hasta que el usuario interactúe">
+      Toca cualquier botón para activar el audio
+    </span>
   </header>
 
   <main class="layout">
     <section class="editor-pane">
       <div class="editor-toolbar">
         <span class="hint" data-i18n="hintEval">Ctrl+Enter o "Evaluar" · Espacio = play/stop</span>
-        <button id="btn-save" data-i18n="save">Guardar</button>
-        <select id="sel-patches" aria-label="patches"></select>
-        <button id="btn-load" data-i18n="load">Cargar</button>
-        <button id="btn-delete" data-i18n="delete">Borrar</button>
+        <button id="btn-save" title="Guarda este código como patch con un nombre"
+                data-i18n="save">Guardar</button>
+        <select id="sel-patches" title="Patches guardados" aria-label="patches"></select>
+        <button id="btn-load" title="Carga el patch seleccionado en el editor"
+                data-i18n="load">Cargar</button>
+        <button id="btn-delete" title="Borra el patch seleccionado"
+                data-i18n="delete">Borrar</button>
       </div>
-      <textarea id="editor" spellcheck="false" autocapitalize="off" autocorrect="off"></textarea>
+      <textarea id="editor" spellcheck="false" autocapitalize="off" autocorrect="off"
+                title="Edita el código TypeScript. Ctrl+Enter para tocar; Tab inserta 2 espacios"></textarea>
       <pre id="error-panel" class="error hidden"></pre>
       <details class="cheatsheet">
         <summary data-i18n="cheatsheet">Cheatsheet del DSL</summary>
         <div class="cheat-grid">
-          <code>.bpm(120)</code>                      <span>tempo</span>
-          <code>.track('drums')</code>                <span>cambia/crea pista</span>
-          <code>.volume(0.7) .pan(-0.3)</code>        <span>nivel/estéreo de pista</span>
-          <code>.mute() .solo()</code>                <span>silenciar/aislar</span>
-          <code>.drum('kick'|'snare'|'hat'|'clap')</code> <span>nueva voz drum</span>
-          <code>.synth('sine'|'square'|'sawtooth'|'triangle')</code> <span>nueva voz sintética</span>
-          <code>.pattern('x...x...x...x...')</code>   <span>16 steps; x=hit, .=silencio</span>
-          <code>.notes('c4 d#4 sol4 do5')</code>      <span>notas absolutas (anglo+latina)</span>
-          <code>.scale('Cm pent') .notes("1 b3 5 1'")</code> <span>escala + grados</span>
-          <code>.filter(800) .release(0.3)</code>     <span>parámetros del synth</span>
-          <code>.every(2)</code>                      <span>suena 1 de cada N ciclos</span>
+          <code>.bpm(120)</code>                      <span>Tempo en pulsaciones por minuto.</span>
+          <code>.track('drums')</code>                <span>Crea o cambia a una pista con ese nombre.</span>
+          <code>.volume(0.7) .pan(-0.3)</code>        <span>Nivel y posición estéreo de la pista activa.</span>
+          <code>.mute() .solo()</code>                <span>Silenciar/aislar pista activa.</span>
+          <code>.drum('kick')</code>                  <span>Nueva voz drum (kick, snare, hat o clap).</span>
+          <code>.synth('sawtooth')</code>             <span>Nueva voz sintética (sine, square, sawtooth, triangle).</span>
+          <code>.pattern('x...x...x...x...')</code>   <span>16 steps; x=hit, .=silencio.</span>
+          <code>.notes('c4 d#4 sol4 do5')</code>      <span>Notas absolutas (anglo o latina, mezclables).</span>
+          <code>.scale('Cm pent') .notes("1 b3 5 1'")</code> <span>Escala + grados (1=tónica, ' octava arriba).</span>
+          <code>.filter(800)</code>                   <span>Frecuencia de corte del lowpass.</span>
+          <code>.attack/decay/sustain/release</code>  <span>Envelope ADSR del synth.</span>
+          <code>.every(2)</code>                      <span>Esta voz suena 1 de cada N ciclos.</span>
+          <code>.octave(3)</code>                     <span>Octava base para grados de escala.</span>
         </div>
       </details>
     </section>
 
     <aside class="side-pane">
       <section class="card">
-        <h2><span data-i18n="grid">Grid del patrón</span> <span class="grid-target" id="grid-label">—</span></h2>
-        <div id="grid" class="grid"></div>
+        <h2>
+          <span data-i18n="grid">Grid del patrón</span>
+          <span class="grid-target" id="grid-label" title="Voz que la grid está editando">—</span>
+        </h2>
+        <div id="grid" class="grid"
+             title="Click o arrastra para encender/apagar pasos. Sincronizado con la línea del cursor."></div>
         <p id="grid-hint" class="hint" data-i18n="gridHint">Pon el cursor en una línea con .pattern(...)</p>
       </section>
 
       <section class="card">
-        <h2 data-i18n="sequencer">Sequencer (todas las voces)</h2>
+        <h2 data-i18n="sequencer" title="Vista tipo tracker: filas=voces, columnas=16 pasos. Solo lectura.">
+          Sequencer (todas las voces)
+        </h2>
         <div id="sequencer"></div>
       </section>
 
       <section class="card">
         <h2 data-i18n="mixer">Mixer</h2>
-        <div id="mixer" class="mixer"></div>
+        <div id="mixer" class="mixer"
+             title="Sliders de volumen, pan, mute (M) y solo (S) por pista — afectan en caliente."></div>
       </section>
 
       <section class="card">
         <h2 data-i18n="visualizer">Visualizador</h2>
-        <canvas id="waveform"></canvas>
-        <canvas id="spectrum"></canvas>
+        <canvas id="waveform" title="Forma de onda del audio en tiempo real"></canvas>
+        <canvas id="spectrum" title="Espectro de frecuencias (barras: graves a la izquierda, agudos a la derecha)"></canvas>
       </section>
     </aside>
   </main>
