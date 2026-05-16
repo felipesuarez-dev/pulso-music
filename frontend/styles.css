@@ -31,7 +31,13 @@ body {
   min-height: 100vh;
   min-height: 100dvh;
   -webkit-tap-highlight-color: rgba(255, 180, 84, 0.2);
+  /* cursor default explícito: evita que se "herede" alguna shape rara
+     desde el visor o desde elementos animados */
+  cursor: default;
 }
+/* También: button:active no debe escalar — el transform causa que el
+   cursor parezca "saltar" sobre el botón al click. */
+button { -webkit-user-select: none; user-select: none; }
 
 .boot-error {
   position: fixed;
@@ -170,7 +176,8 @@ button, select {
   touch-action: manipulation;
 }
 button:hover, select:hover { border-color: var(--accent); }
-button:active { transform: scale(0.98); }
+/* removido scale(0.98) en :active — el reflow visual hace que el cursor
+   parezca brincar sobre el botón al pulsarlo */
 button.primary { background: var(--accent); color: #1a120a; border-color: var(--accent); font-weight: 600; }
 button.primary:hover { filter: brightness(1.1); }
 button.primary.big { padding: 10px 22px; font-size: 15px; min-width: 100px; }
@@ -335,9 +342,8 @@ button.flash {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  cursor: help;                  /* pista visual de que hay tooltip */
   border: 1px solid transparent;
-  transition: border-color 0.12s;
+  /* sin cursor: help — molesta cambiar el cursor en cada chip al hover */
 }
 .cheat-grid code:hover {
   border-color: var(--accent);
@@ -500,6 +506,9 @@ button.flash {
   contain: strict;
   will-change: transform;
   transform: translateZ(0);
+  /* pointer-events:none — son puramente visuales; el cursor no flickerea
+     al pasar sobre el canvas mientras se redibuja a 30fps */
+  pointer-events: none;
 }
 #waveform { height: 130px; contain-intrinsic-size: 600px 130px; }
 #spectrum { height: 70px; contain-intrinsic-size: 600px 70px; }
