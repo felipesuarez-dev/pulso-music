@@ -227,7 +227,12 @@
       </section>
 
       <section class="cheat-section">
-        <h3>🎹 Synths (4 ondas)</h3>
+        <h3>🎹 Synths (4 ondas crudas)</h3>
+        <p class="cheat-note">
+          Pulso <strong>NO tiene samples reales</strong> de guitarras/violines/etc.
+          Todo es síntesis con estas 4 ondas. Para sonidos específicos usa los
+          <strong>presets</strong> abajo, o exporta MIDI y carga en un DAW con tus VSTs.
+        </p>
         <div class="cheat-grid">
           <code title="Sine: onda pura sin armónicos. Suave, redonda. Para subs, pads, flautas.">.synth('sine')</code>
           <span>Suave / pura.</span>
@@ -238,6 +243,80 @@
           <code title="Triangle: pocos armónicos suaves. Dulce, con cuerpo. Lead melódico.">.synth('triangle')</code>
           <span>Dulce.</span>
         </div>
+      </section>
+
+      <section class="cheat-section">
+        <h3>🎼 Presets de instrumento (16 — NUEVO)</h3>
+        <p class="cheat-note">
+          Aplica tras <code>.synth()</code> para configurar wave + filter + ADSR de una vez.
+          Puedes sobreescribir parámetros después con <code>.filter</code>/<code>.release</code>/etc.
+        </p>
+        <div class="cheat-grid">
+          <code title="Lead chiptune Game Boy/NES. Square brillante, ataque instantáneo, cola corta.">.preset('8bit-lead')</code>
+          <span>Lead chiptune.</span>
+          <code title="Bajo Game Boy retro. Square filtrado, cuerpo definido, sin cola.">.preset('8bit-bass')</code>
+          <span>Bajo chiptune.</span>
+          <code title="Arpegio Game Boy. Square picado para notas rápidas (Pokemon battle vibes).">.preset('8bit-arp')</code>
+          <span>Arpegio chip.</span>
+          <code title="Bajo rock. Saw filtrada con cuerpo, simula bajo eléctrico con dedos.">.preset('rock-bass')</code>
+          <span>Bajo rock.</span>
+          <code title="Lead rock con saturación. Saw brillante, sostiene la nota.">.preset('rock-lead')</code>
+          <span>Lead rock.</span>
+          <code title="Guitarra acústica. Triangle dulce, ataque suave, decay natural.">.preset('guitar-acoustic')</code>
+          <span>🎸 Acústica.</span>
+          <code title="Guitarra eléctrica clean. Saw filtrada, decay rockero.">.preset('guitar-electric')</code>
+          <span>🎸 Eléctrica.</span>
+          <code title="Piano. Triangle con decay largo y sin sustain (las teclas no sostienen).">.preset('piano')</code>
+          <span>🎹 Piano.</span>
+          <code title="Violín. Sine con attack LENTO (400ms) — entra suave como un arco.">.preset('violin')</code>
+          <span>🎻 Violín.</span>
+          <code title="Flauta. Sine breve y brillante, sustain alto.">.preset('flute')</code>
+          <span>🎵 Flauta.</span>
+          <code title="Órgano. Square sostenido total (sustain 100%, sin decay).">.preset('organ')</code>
+          <span>⛪ Órgano.</span>
+          <code title="Campana / chime. Triangle brillante con decay y cola larga.">.preset('bell')</code>
+          <span>🔔 Campana.</span>
+          <code title="Pad cálido. Triangle sostenido, entra y sale lento (atmósfera).">.preset('pad-warm')</code>
+          <span>🌅 Pad cálido.</span>
+          <code title="Pad frío / sci-fi. Sine etérea, attack ultra lento.">.preset('pad-cold')</code>
+          <span>🌌 Pad frío.</span>
+          <code title="Sub-bajo. Sine grave filtrada bajo, sostiene mucha presencia.">.preset('sub-bass')</code>
+          <span>🔊 Sub-bajo.</span>
+          <code title="Pluck percusivo. Sine con attack instantáneo y decay cortísimo (tipo dedo).">.preset('pluck')</code>
+          <span>🎯 Pluck.</span>
+        </div>
+      </section>
+
+      <section class="cheat-section">
+        <h3>🎮 Compatibilidad GBA · Pokemon decomp · DAWs</h3>
+        <p class="cheat-note">
+          El botón <strong>Export MIDI</strong> genera un <strong>Standard MIDI File
+          formato 1</strong>. Verificado con <code>file</code> como
+          "Standard MIDI data (format 1)". Compatible con:
+        </p>
+        <ul class="cheat-list">
+          <li><strong>pokeemerald / pokeruby / pokefirered</strong> (decomps):<br/>
+            convierte con <code>mid2agb</code> (parte de devkitARM):<br/>
+            <code class="block">mid2agb -G127 tu.mid 60 0 tu.s</code>
+            Copia <code>tu.s</code> a <code>sound/songs/</code> del decomp y
+            registra la entrada en <code>songs.json</code> + <code>sound/song_table.inc</code>.
+          </li>
+          <li><strong>MaxMod / Krawall</strong> (motores GBA tracker):<br/>
+            abre el MIDI en OpenMPT o MilkyTracker → guarda como <code>.xm</code> /
+            <code>.s3m</code> → compila con <code>mmutil</code>.
+          </li>
+          <li><strong>DAWs</strong> (Ableton, Logic, Reaper, FL, MuseScore, GarageBand):<br/>
+            drag-and-drop directo del <code>.mid</code>. Cada pista de Pulso se
+            mapea a una pista MIDI.
+          </li>
+        </ul>
+        <p class="cheat-note">
+          <strong>Limitaciones para Pokemon decomp:</strong>
+          el MIDI sale en canal 0 sin program changes — vas a tener que asignar
+          el <code>voicegroup</code>/instrumento en el <code>.s</code> después
+          de convertir. La percusión usa General MIDI standard (kick=36, snare=38,
+          hat=42, clap=39), que coincide con el bank por defecto del M4A.
+        </p>
       </section>
 
       <section class="cheat-section">

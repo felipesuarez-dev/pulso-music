@@ -380,6 +380,46 @@ pulso()
 `,
   },
   {
+    id: "banda-presets",
+    name: "🎻 Banda completa — usa los presets (piano, violín, guitarra)",
+    code:
+`// Showcase de presets: piano, violín, guitarra acústica, sub-bass, bell.
+// Pop-balada en SOL mayor.
+pulso()
+  .bpm(92)
+  .track('drums')
+    .drum('kick').pattern('x...x...x...x...').volume(0.65)
+    .drum('snare').pattern('....x.......x...').volume(0.5)
+    .drum('hat').pattern('..x...x...x...x.').volume(0.35)
+  .track('sub').volume(0.85)
+    .synth('sine').preset('sub-bass')
+      .scale('G major')
+      .notes('1 _ _ _ 5 _ _ _ 6 _ _ _ 4 _ _ _')
+      .octave(2)
+  .track('piano').pan(-0.3).volume(0.7)
+    .synth('triangle').preset('piano')
+      .scale('G major')
+      // Acordes G - D - Em - C (I - V - vi - IV)
+      .notes("1 3 5 1' 5 3 1 5 4 6 1' 4 1 3 5 1")
+  .track('violin').pan(0.3).volume(0.6)
+    .synth('sine').preset('violin')
+      .scale('G major')
+      // Línea melódica suave con attack lento
+      .notes("3 _ _ _ 5 _ _ _ 1' _ _ _ 5 _ _ _")
+  .track('guitarra').pan(-0.4).volume(0.55)
+    .synth('triangle').preset('guitar-acoustic')
+      .scale('G major')
+      // Arpegio de guitarra acústica
+      .notes("1 3 5 3 5 3 1 5, 4 6 1' 6 5 7 2' 7")
+  .track('bell').pan(0.4).volume(0.5)
+    .synth('triangle').preset('bell')
+      .scale('G major')
+      .notes("1' . . . . . . . 5' . . . . . . .")
+      .every(2)
+  .play();
+`,
+  },
+  {
     id: "song-structure",
     name: "🎶 Canción completa — intro · verso · coro · break (16 ciclos)",
     code:

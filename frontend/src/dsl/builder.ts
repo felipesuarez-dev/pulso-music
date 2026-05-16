@@ -13,6 +13,7 @@ import type { DrumKind, SessionDef, TrackDef, VoiceDef, Wave } from "../types.ts
 import { parsePattern } from "./pattern.ts";
 import { parseScale, resolveDegrees, looksLikeDegrees } from "./scales.ts";
 import { parseNotes } from "./notation.ts";
+import { applyPreset, type PresetName, PRESETS } from "./presets.ts";
 
 export type PlayHandler = (session: SessionDef) => void;
 
@@ -110,6 +111,16 @@ class PulsoBuilder {
 
   octave(n: number): this {
     this.requireVoice().scaleOctave = n;
+    return this;
+  }
+
+  // Aplica un preset de instrumento (wave + filter + ADSR de una vez).
+  // Llamable tras .synth(). Puedes sobreescribir parámetros después con .filter/.release/etc.
+  preset(name: PresetName): this {
+    const v = this.requireVoice();
+    if (v.kind !== "synth") throw new Error("preset() sólo aplica a .synth(), no a .drum()");
+    if (!(name in PRESETS)) throw new Error(`preset desconocido: "${name}"`);
+    applyPreset(v, name);
     return this;
   }
 

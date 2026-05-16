@@ -23,6 +23,12 @@ const KNOWN_DRUMS = new Set([
   "tom", "rim", "cowbell", "ride", "shaker", "perc",
 ]);
 const KNOWN_WAVES = new Set(["sine", "square", "sawtooth", "triangle"]);
+const KNOWN_PRESETS = new Set([
+  "8bit-lead", "8bit-bass", "8bit-arp",
+  "rock-bass", "rock-lead", "guitar-acoustic", "guitar-electric",
+  "piano", "violin", "flute", "organ", "bell",
+  "pad-warm", "pad-cold", "sub-bass", "pluck",
+]);
 
 const TYPOS: Array<[RegExp, string]> = [
   [/\.path\(/g,    ".pattern("],
@@ -133,7 +139,23 @@ export function lintCode(code: string): Lint[] {
     }
   }
 
-  // 7) rangos numéricos
+  // 7) preset desconocido (matchea case-sensitive porque los nombres usan guion)
+  const presetRe = /\.preset\(\s*['"]([^'"]+)['"]/g;
+  {
+    let m: RegExpExecArray | null;
+    while ((m = presetRe.exec(code)) !== null) {
+      const name = m[1] ?? "";
+      if (!KNOWN_PRESETS.has(name)) {
+        out.push({
+          severity: "error",
+          ...lineColAt(code, m.index),
+          message: `preset «${name}» no existe — ver el drawer 📘 DSL para la lista`,
+        });
+      }
+    }
+  }
+
+  // 8) rangos numéricos
   for (const [re, range, label] of [
     [/\.bpm\(\s*(-?\d+(?:\.\d+)?)/g,    [20, 400], "bpm"],
     [/\.volume\(\s*(-?\d+(?:\.\d+)?)/g, [0, 1.5], "volume"],
