@@ -1,0 +1,27 @@
+# Repo metadata / IDE / OS
+.git
+.gitignore
+.gitattributes
+.github
+.claude
+.idea
+.vscode
+.DS_Store
+
+# Runtime artifacts del modo bg/dev local — el contenedor los regenera
+pulso.log
+pulso.pid
+dist
+node_modules
+
+# Datos del usuario: el contenedor los recibe via volumen ./data
+data
+
+# Docs/infra que no necesita el runtime
+docs
+docker-compose.yml
+Dockerfile
+.dockerignore
+.env
+.env.example
+manage.sh
