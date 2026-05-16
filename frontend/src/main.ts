@@ -49,8 +49,9 @@ const mixerEl    = $<HTMLElement>("#mixer");
 const waveCanvas = $<HTMLCanvasElement>("#waveform");
 const specCanvas = $<HTMLCanvasElement>("#spectrum");
 const btnPlay    = $<HTMLButtonElement>("#btn-play");
-const btnStop    = $<HTMLButtonElement>("#btn-stop");
+const btnEval    = $<HTMLButtonElement>("#btn-eval");
 const btnExport  = $<HTMLButtonElement>("#btn-export-midi");
+const bpmSlider  = $<HTMLInputElement>("#bpm-slider");
 const bpmDisplay = $<HTMLElement>("#bpm-display");
 const ctxWarn    = $<HTMLElement>("#ctx-warning");
 const selNotation = $<HTMLSelectElement>("#sel-notation");
@@ -98,7 +99,10 @@ setPlayHandler((session) => {
 
 const mixer = new Mixer(mixerEl, runtime);
 const visualizer = new Visualizer(waveCanvas, specCanvas);
-const transport = new Transport(btnPlay, btnStop, btnExport, bpmDisplay, runtime);
+const transport = new Transport(
+  btnPlay, btnEval, btnExport, bpmSlider, bpmDisplay, runtime,
+  () => runOnce(editor.getCode()),
+);
 
 visualizer.start();
 
@@ -166,6 +170,25 @@ function runOnce(code: string): void {
 
 runOnce(editor.getCode());
 
+// Posicionar el cursor en la primera línea con .pattern(...) para que la grid
+// se vea de inmediato en lugar de mostrar el placeholder.
+{
+  const lines = editor.getCode().split("\n");
+  let pos = 0;
+  for (const ln of lines) {
+    if (/\.pattern\(/.test(ln)) {
+      editorEl.focus();
+      editorEl.selectionStart = editorEl.selectionEnd = pos;
+      // dispara emitCursor manualmente
+      editorEl.dispatchEvent(new Event("input"));
+      // y desenfoca para que el usuario no escriba accidentalmente al primer tap
+      editorEl.blur();
+      break;
+    }
+    pos += ln.length + 1;
+  }
+}
+
 // activar audio en cualquier interacción del usuario (necesario en iOS)
 const wakeAudio = () => {
   void ensureRunning();
@@ -173,6 +196,15 @@ const wakeAudio = () => {
 document.addEventListener("click", wakeAudio, { once: false, capture: true });
 document.addEventListener("keydown", wakeAudio, { once: false, capture: true });
 document.addEventListener("touchstart", wakeAudio, { once: false, capture: true, passive: true });
+
+// Atajo: barra espaciadora = play/stop (sólo si el foco no está en el editor o un input)
+document.addEventListener("keydown", (e) => {
+  if (e.key !== " " && e.code !== "Space") return;
+  const tgt = e.target as HTMLElement;
+  if (tgt && (tgt.tagName === "TEXTAREA" || tgt.tagName === "INPUT" || tgt.tagName === "SELECT")) return;
+  e.preventDefault();
+  transport.toggle();
+});
 
 // ─── Now playing ───────────────────────────────────────────────
 function refreshNowPlaying(currentStep: number): void {

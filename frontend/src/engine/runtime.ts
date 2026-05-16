@@ -22,6 +22,11 @@ export class Runtime {
     this.syncBuses();
   }
 
+  setBpm(bpm: number): void {
+    if (this.session) this.session.bpm = bpm;
+    this.scheduler.setBpm(bpm);
+  }
+
   getSession(): SessionDef | null {
     return this.session;
   }
@@ -137,6 +142,8 @@ export class Runtime {
   }
 }
 
+const STEPS_PER_CYCLE = 16;
+
 function pickSynthNote(v: VoiceDef, step: number): number {
   const notes = v.notes ?? [];
   if (notes.length === 0) return -2;
@@ -146,6 +153,12 @@ function pickSynthNote(v: VoiceDef, step: number): number {
     for (let i = 0; i < step; i++) if (v.pattern[i]) idx++;
     return notes[idx % notes.length] ?? -2;
   }
-  // notes-only: una por step (cíclico). -1 (sustain) y -2 (rest) ya como tales.
-  return notes[step % notes.length] ?? -2;
+  // notes-only: distribuir N notas a lo largo del ciclo de 16 steps.
+  // Trigger sólo en los steps donde cambia el índice — así N=8 dispara cada
+  // 2 steps, N=4 cada 4, N=12 polirrítmico, etc.
+  const idxNow  = Math.floor((step       * notes.length) / STEPS_PER_CYCLE);
+  const idxPrev = step === 0 ? -1
+                : Math.floor(((step - 1) * notes.length) / STEPS_PER_CYCLE);
+  if (idxNow === idxPrev) return -2;
+  return notes[idxNow % notes.length] ?? -2;
 }

@@ -4,6 +4,7 @@ const STR: Record<Lang, Record<string, string>> = {
   es: {
     play: "Tocar",
     stop: "Parar",
+    evaluate: "Evaluar",
     bpm: "BPM",
     notation: "Notación",
     lang: "Idioma",
@@ -26,6 +27,7 @@ const STR: Record<Lang, Record<string, string>> = {
   en: {
     play: "Play",
     stop: "Stop",
+    evaluate: "Evaluate",
     bpm: "BPM",
     notation: "Notation",
     lang: "Language",

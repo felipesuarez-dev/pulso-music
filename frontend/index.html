@@ -12,9 +12,10 @@
     <h1 class="brand">pulso<span class="dot">.</span></h1>
     <div class="controls">
       <button id="btn-play" class="primary" data-i18n="play">Tocar</button>
-      <button id="btn-stop" data-i18n="stop">Parar</button>
+      <button id="btn-eval" data-i18n="evaluate">Evaluar</button>
       <span class="bpm">
-        <label data-i18n="bpm">BPM</label>
+        <label for="bpm-slider" data-i18n="bpm">BPM</label>
+        <input id="bpm-slider" type="range" min="40" max="220" step="1" value="120" />
         <span id="bpm-display">120</span>
       </span>
       <span id="ctx-warning" class="hidden warn" data-i18n="ctxSuspended">Toca cualquier botón para activar el audio</span>
