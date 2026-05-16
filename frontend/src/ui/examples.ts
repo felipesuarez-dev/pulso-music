@@ -333,6 +333,108 @@ pulso()
 `,
   },
   {
+    id: "cinematic-epic",
+    name: "🎬 Cinematic épico (8 pistas, todos los drums)",
+    code:
+`// Epic cinematic en LA menor — 88 BPM solemne.
+// 8 pistas. Showcase de los 10 drums + 4 capas de cuerdas/brass/coro.
+// Progresión clásica épica: Am (i) → G (bVII) → F (bVI) → E (V).
+pulso()
+  .bpm(88)
+  .track('foundation')
+    .drum('kick').pattern('x.......x.......').volume(0.85)
+    .drum('snare').pattern('....x.......x...').volume(0.5)
+    .drum('tom').pattern('..............x.').volume(0.65)
+  .track('cymbals').volume(0.55)
+    .drum('ride').pattern('....x.......x...')
+    .drum('shaker').pattern('x.x.x.x.x.x.x.x.')
+  .track('tension').volume(0.45)
+    .drum('rim').pattern('x.x.....x.x.....')
+  .track('sub').volume(0.95)
+    .synth('sine')
+      .scale('Am')
+      // Sub-bajo sostenido en la fundamental de cada acorde
+      .notes('1 _ _ _ b7 _ _ _ b6 _ _ _ 5 _ _ _')
+      .filter(180).release(0.8).octave(1)
+  .track('strings').pan(-0.35).volume(0.6)
+    .synth('sine')
+      .scale('Am')
+      // Cuerdas en octava alta — pad con attack lento
+      .notes("1' _ _ _ b7 _ _ _ b6 _ _ _ 5 _ _ _")
+      .filter(1400).attack(0.5).release(1.5)
+  .track('brass').pan(0.35).volume(0.7)
+    .synth('sawtooth')
+      .scale('Am')
+      // Contramelodía descendente: 5 4 b3 2 sobre los 4 acordes
+      .notes("5 _ _ _ 4 _ _ _ b3 _ _ _ 2 _ _ _")
+      .filter(1900).attack(0.1).release(0.6)
+  .track('lead').pan(0).volume(0.75)
+    .synth('triangle')
+      .scale('Am')
+      // Motivo épico ascendente y resolución
+      .notes("5' 4' b3' 2' . b3' 4' 5' . 4' b3' 1' . 7 1' _")
+      .filter(2800).attack(0.04).release(0.45)
+  .track('choir').pan(0).volume(0.4)
+    .synth('triangle')
+      .scale('Am')
+      // Coro alto sostenido — entra cada 2 ciclos (build de tensión)
+      .notes("1'' _ _ _ b7' _ _ _ b6' _ _ _ 5' _ _ _")
+      .every(2).filter(2200).attack(0.6).release(2.0)
+  .play();
+`,
+  },
+  {
+    id: "salsa-caliente",
+    name: "💃 Salsa caliente (percusión latina, 9 pistas)",
+    code:
+`// Salsa en RE menor — 108 BPM. Showcase de percusión latina con
+// clave + cowbell + shaker + congas (tom) + rim + perc + kit.
+// Tumbao de bajo + montuno de piano + brass stabs + lead melódico.
+pulso()
+  .bpm(108)
+  .track('clave')
+    // Clave son 2-3 (la base rítmica de toda la salsa)
+    .drum('rim').pattern('..x...x...x.x...').volume(0.7)
+  .track('cowbell')
+    .drum('cowbell').pattern('x...x...x...x...').volume(0.55)
+  .track('shaker').volume(0.5)
+    // Shaker continuo en 8th notes
+    .drum('shaker').pattern('x.x.x.x.x.x.x.x.')
+  .track('congas').volume(0.7)
+    // Conga: tom grave con perc complementario
+    .drum('tom').pattern('..x...x.....x.x.')
+    .drum('perc').pattern('....x.......x...').volume(0.55)
+  .track('drum-kit').volume(0.65)
+    .drum('kick').pattern('x...x...x...x...')
+    .drum('snare').pattern('....x.......x...').volume(0.4)
+  .track('bajo').volume(0.9)
+    .synth('sine')
+      .scale('Dm')
+      // Tumbao: anticipación característica del bajo de salsa
+      .notes('1 . . . 5 . 1, . . . 4 . 5 . 1 .')
+      .filter(440).release(0.22).octave(2)
+  .track('piano').pan(-0.35).volume(0.6)
+    .synth('square')
+      .scale('Dm')
+      // Montuno: patrón sincopado clásico
+      .notes("1 b3 5 1' b3 5 1 b3 4 b6 1' 4 5 b7 b3' 5")
+      .filter(2200).release(0.18)
+  .track('brass').pan(0.35).volume(0.7)
+    .synth('sawtooth')
+      .scale('Dm')
+      // Brass stabs en off-beat, cada 2 ciclos para que respire
+      .notes(". . 5' 1'' . . 4' b7' . . 5' 1'' . . 4' b7'")
+      .every(2).filter(2400).attack(0.02).release(0.3)
+  .track('lead').pan(0).volume(0.55)
+    .synth('triangle')
+      .scale('Dm')
+      // Melodía tres cubano — entra cada 4 ciclos como solo
+      .notes("5 b3 1 5 _ 4 b3 1 _ b3 5 1' _ b7 5 _")
+      .every(4).filter(2800).release(0.4)
+  .play();
+`,
+  },
+  {
     id: "lofi-hiphop",
     name: "🌊 Lo-fi hip hop (chill)",
     code:
