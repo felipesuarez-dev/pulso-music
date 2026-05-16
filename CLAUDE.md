@@ -12,21 +12,51 @@ Pulso es un entorno de live coding musical en TypeScript. **Lee este archivo ant
 
 ## Runtime y comandos
 
+Pulso vive en dos puertos en este host:
+
+| Puerto | Rol | Cómo corre | Sobrevive reboot |
+|---|---|---|---|
+| **4040** | dev (bundle con sourcemaps, sin minify, hot reload) | bare-metal con `./manage.sh dev`/`bg` (en `/home/felipe/pulso`) | no |
+| **4050** | producción dockerizada (bundle minificado, `NODE_ENV=production`) | container `pulso` con `restart: unless-stopped` (en `/opt/pulso/`) | sí |
+
+### Comandos del repo (bare-metal, modo dev en 4040)
+
 ```bash
-./manage.sh start         # producción (foreground; Ctrl+C para parar)
+./manage.sh start         # foreground (Ctrl+C para parar)
 ./manage.sh dev           # foreground con --hot reload
 ./manage.sh bg            # background (logs en pulso.log, PID en pulso.pid)
 ./manage.sh stop          # detiene el server en background
 ./manage.sh status        # informa si corre y en qué puerto
-./manage.sh build         # genera bundle prod del frontend a disco
+./manage.sh build         # genera bundle prod del frontend a disco (dist/)
 ./manage.sh push-gitea    # crea repo + push a Gitea local
 ./manage.sh push-github   # push a GitHub vía SSH
 ./manage.sh push-all      # ambos remotes
 ```
 
-- Puerto: **4040** por defecto (4000 lo usa code-server en este host). Editable con `PORT=` en `.env`.
-- Acceso LAN: `http://192.168.1.2:4040`. Tailscale: `http://100.105.21.49:4040`.
+### Comandos del docker (producción en 4050)
+
+```bash
+cd /opt/pulso
+./manage.sh start         # docker compose up -d
+./manage.sh stop          # docker compose down
+./manage.sh restart
+./manage.sh status        # estado + uso de recursos
+./manage.sh logs live     # logs en tiempo real
+./manage.sh build         # rebuild de la imagen pulso:latest
+./manage.sh update        # git pull + rebuild + recrear contenedor
+./manage.sh backup        # tar.gz de data/ + docker-compose.yml
+```
+
+- Acceso LAN dev:      `http://192.168.1.2:4040` (cuando esté arrancado a mano)
+- Acceso LAN prod:     `http://192.168.1.2:4050` (siempre arriba via docker)
+- Tailscale prod:      `http://100.105.21.49:4050`
 - Bundle/CSS cache busting: el HTML inyecta `?v=<mtime>` en cada `<script>` y `<link>` (ver `backend/CLAUDE.md`).
+
+### Notas del Docker
+
+- `Dockerfile` + `.dockerignore` viven en la raíz del repo. Base: `oven/bun:1.3.10-alpine`, user `bun` (uid 1000).
+- Infra externa al repo: `/opt/pulso/` (compose + manage.sh + data/logs/backups/). No commitear esa parte aquí — está documentada en `/home/felipe/docs-sv/resumen_PULSO_docker_16052026.txt`.
+- El bundle del frontend dentro del contenedor se genera a partir del código copiado en build-time. Tras editar `.ts`, hay que rebuild: `cd /opt/pulso && ./manage.sh update`. Para iterar en caliente, usar el modo dev en 4040.
 
 ## Convención de commits
 
@@ -42,11 +72,13 @@ Cuerpo del commit: agrupa por sección con headers en MAYÚSCULAS. Explica el "p
 pulso/
 ├── backend/                 → Bun.serve + REST + WebSocket + bundler
 ├── frontend/                → HTML + TS + CSS, motor Web Audio
+│   ├── favicon.svg          → onda de pulso naranja (también usada como logo del README)
+│   └── cursor-text.svg      → cursor I-beam custom (visible en fondo oscuro)
 ├── docs/                    → manual de uso musical (markdown)
 ├── data/                    → patches guardados (JSON, gitignored)
-├── manage.sh                → entrypoint de scripts
-├── cursor-text.svg          → cursor I-beam custom naranja (visible en fondo oscuro)
-├── favicon.svg              → favicon: onda de pulso naranja
+├── Dockerfile               → imagen para 4050 prod (oven/bun:1.3.10-alpine)
+├── .dockerignore            → excluye .git, logs, data, docs, manage.sh, Dockerfile
+├── manage.sh                → entrypoint dev/bg/build/push (bare-metal en 4040)
 └── .env.example             → plantilla de variables
 ```
 
