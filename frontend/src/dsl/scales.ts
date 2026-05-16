@@ -47,47 +47,64 @@ export interface ScaleRef {
 }
 
 // Parsea entrada como "Cm", "Cm pentatonic", "DO menor pentatónica", etc.
-// Primer token = tónica. Resto = nombre escala (o sufijo m/M directo).
+// Primer token = tónica (con posible sufijo m/M pegado). Resto = nombre escala.
 export function parseScale(input: string): ScaleRef {
   const tokens = input.trim().split(/\s+/).filter((t) => t.length > 0);
   if (tokens.length === 0) throw new Error("escala vacía");
   const first = tokens[0]!;
   // separar tónica de posible sufijo "m"/"M" pegado: "Cm" → tónica "C", suffix "m"
-  const m = /^([A-Ga-g][#b♯♭]?|do|re|mi|fa|sol|la|si)([#b♯♭]?)([mM])?$/.exec(first);
+  // soporta "Bbm", "F#M", "Cm", pero NO "do"/"DO" (que son tónicas válidas sin sufijo).
+  const angloRe = /^([A-Ga-g][#b♯♭]?)([mM])?$/;
+  const am = angloRe.exec(first);
   let rootName = first;
-  let suffix = "";
-  if (m && (m[3] === "m" || m[3] === "M")) {
-    rootName = (m[1] ?? "") + (m[2] ?? "");
-    suffix = m[3];
-    // si es "do" o "re" etc. con mayúscula, m podría confundir; reintenta sin sufijo si root inválido
+  let mode: "min" | "maj" | "" = "";
+  if (am && am[2]) {
+    rootName = am[1] ?? "";
+    mode = am[2] === "m" ? "min" : "maj";
   }
   const pc = pitchClassFromName(rootName);
-  // reconstruir nombre de escala: suffix + tokens[1..]
-  const rest = (suffix ? [suffix] : []).concat(tokens.slice(1));
-  const scaleAlias = rest.length === 0 ? "major" : rest.join("").toLowerCase();
-  // normalizar acentos básicos
-  const normalized = scaleAlias
-    .replace(/menor/g, "minor")
-    .replace(/mayor/g, "major")
-    .replace(/pentatónica/g, "pentatonic")
-    .replace(/pentatonica/g, "pentatonic");
-  // probar varios mapeos: alias completo, sin pentatonic, con pentatonic, con minor/major sufijo
-  const candidates = [
-    normalized,
-    normalized.replace(/^m/, "minor"),
-    normalized.replace(/^M/, "major"),
-  ];
+
+  // Normaliza el resto a tokens "modo" + "tipo"
+  const restTokens = tokens
+    .slice(1)
+    .map((t) => t.toLowerCase())
+    .map((t) =>
+      t
+        .replace(/menor/g, "minor")
+        .replace(/mayor/g, "major")
+        .replace(/pentatónica|pentatonica/g, "pentatonic")
+        .replace(/dórico|dórica|dorica|dorico/g, "dorian")
+        .replace(/mixolidio|mixolidia/g, "mixolydian")
+        .replace(/frigio|frigia/g, "phrygian")
+        .replace(/lidio|lidia/g, "lydian")
+        .replace(/cromática|cromatica/g, "chromatic")
+        .replace(/armónica|armonica/g, "harmonic")
+    );
+
+  // detecta menor/mayor en el resto si no había sufijo pegado
+  if (!mode) {
+    if (restTokens.includes("minor") || restTokens.includes("min") || restTokens.includes("m")) mode = "min";
+    else if (restTokens.includes("major") || restTokens.includes("maj") || restTokens.includes("M".toLowerCase())) mode = "maj";
+  }
+
+  const hasPentatonic = restTokens.includes("pentatonic") || restTokens.includes("pent");
+  const hasBlues = restTokens.includes("blues");
+  const hasHarmonic = restTokens.includes("harmonic");
+  const hasChromatic = restTokens.includes("chromatic");
+  const modeName = restTokens.find((t) =>
+    ["dorian", "mixolydian", "phrygian", "lydian"].includes(t)
+  );
+
   let key: string | undefined;
-  for (const c of candidates) {
-    if (SCALE_ALIASES[c]) { key = SCALE_ALIASES[c]; break; }
-    if (SCALES[c]) { key = c; break; }
-  }
-  // si normalized es "mpentatonic" o "Mpentatonic" → pentatonicMin/Maj
-  if (!key) {
-    if (/^mpentatonic/.test(normalized)) key = "pentatonicMin";
-    else if (/^Mpentatonic/.test(normalized)) key = "pentatonicMaj";
-  }
-  if (!key) throw new Error(`escala desconocida: "${input}"`);
+  if (modeName) key = modeName;
+  else if (hasChromatic) key = "chromatic";
+  else if (hasBlues) key = "blues";
+  else if (hasPentatonic) key = mode === "maj" ? "pentatonicMaj" : "pentatonicMin";
+  else if (hasHarmonic) key = "harmonicMinor";
+  else if (mode === "min") key = "minor";
+  else key = "major";
+
+  if (!SCALES[key]) throw new Error(`escala desconocida: "${input}"`);
   return { pc, scale: key, intervals: SCALES[key]! };
 }
 
