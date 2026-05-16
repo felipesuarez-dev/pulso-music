@@ -1,6 +1,8 @@
 // Tipos compartidos del DSL y del engine.
 
-export type DrumKind = "kick" | "snare" | "hat" | "clap";
+export type DrumKind =
+  | "kick" | "snare" | "hat" | "clap"
+  | "tom" | "rim" | "cowbell" | "ride" | "shaker" | "perc";
 export type Wave = "sine" | "square" | "sawtooth" | "triangle";
 
 export interface VoiceDef {

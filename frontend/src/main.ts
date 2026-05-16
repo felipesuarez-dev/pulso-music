@@ -380,5 +380,28 @@ function bootstrap(): void {
     transport.toggle();
   });
 
+  // ─── Cheat drawer (referencia del DSL) ─────────────────────────
+  const btnToggleCheat = $<HTMLButtonElement>("#btn-toggle-cheat");
+  const btnCloseCheat  = $<HTMLButtonElement>("#btn-close-cheat");
+  const cheatDrawer    = $<HTMLElement>("#cheat-drawer");
+  const cheatBackdrop  = $<HTMLElement>("#cheat-backdrop");
+  function openCheat(): void {
+    cheatDrawer.classList.add("open");
+    cheatBackdrop.classList.remove("hidden");
+    cheatDrawer.setAttribute("aria-hidden", "false");
+  }
+  function closeCheat(): void {
+    cheatDrawer.classList.remove("open");
+    cheatBackdrop.classList.add("hidden");
+    cheatDrawer.setAttribute("aria-hidden", "true");
+  }
+  btnToggleCheat.addEventListener("click", () =>
+    cheatDrawer.classList.contains("open") ? closeCheat() : openCheat());
+  btnCloseCheat.addEventListener("click", closeCheat);
+  cheatBackdrop.addEventListener("click", closeCheat);
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && cheatDrawer.classList.contains("open")) closeCheat();
+  });
+
   console.log("[pulso] bootstrap OK");
 }

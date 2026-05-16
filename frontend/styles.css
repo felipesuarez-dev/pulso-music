@@ -182,6 +182,21 @@ button.primary { background: var(--accent); color: #1a120a; border-color: var(--
 button.primary:hover { filter: brightness(1.1); }
 button.primary.big { padding: 10px 22px; font-size: 15px; min-width: 100px; }
 
+/* Botón con icono (PLAY/STOP svg) */
+button.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 16px;
+  min-width: 64px;
+}
+button.icon-btn .ico {
+  width: 22px;
+  height: 22px;
+  fill: currentColor;
+}
+button.icon-btn .ico.hidden { display: none; }
+
 /* Play en estado activo: pulsa con opacity (GPU, sin repaint del entorno) */
 button.primary.active {
   background: var(--danger);
@@ -385,8 +400,92 @@ button.flash {
 .console-log .entry.ok    .msg { color: var(--ok); }
 .console-log .entry.info  .msg { color: var(--text-dim); }
 
-/* ─── Cheatsheet ───────────────────────────────────────────── */
-.cheatsheet {
+/* ─── DSL Drawer (referencia lateral) ──────────────────────── */
+.cheat-toggle {
+  background: var(--bg-3);
+  border-color: var(--accent);
+  color: var(--accent);
+  font-weight: 600;
+  padding: 8px 14px;
+}
+.cheat-toggle:hover { background: var(--accent); color: #1a120a; }
+
+.cheat-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  z-index: 90;
+  cursor: pointer;
+}
+
+.cheat-drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  height: 100vh;
+  height: 100dvh;
+  width: 400px;
+  max-width: 92vw;
+  background: var(--bg-2);
+  border-left: 1px solid var(--border);
+  transform: translateX(100%);
+  transition: transform 0.2s ease-out;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  box-shadow: -8px 0 24px rgba(0, 0, 0, 0.6);
+}
+.cheat-drawer.open { transform: translateX(0); }
+
+.cheat-drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  padding-top: max(12px, env(safe-area-inset-top));
+  background: var(--bg-3);
+  border-bottom: 1px solid var(--border);
+}
+.cheat-drawer-header h2 {
+  margin: 0;
+  font-size: 14px;
+  letter-spacing: 0.5px;
+}
+.cheat-drawer-header .mini {
+  background: transparent;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+  padding: 4px 10px;
+  min-height: 32px;
+  color: var(--text-dim);
+}
+.cheat-drawer-header .mini:hover { color: var(--danger); }
+
+.cheat-drawer-body {
+  overflow: auto;
+  padding: 16px;
+  padding-bottom: max(16px, env(safe-area-inset-bottom));
+  flex: 1;
+  font-size: 12px;
+}
+.cheat-footer {
+  margin: 16px 0 0;
+  padding: 12px;
+  background: var(--bg-3);
+  border-radius: 6px;
+  color: var(--text-dim);
+  font-size: 11px;
+}
+.cheat-footer code {
+  background: var(--bg-2);
+  padding: 1px 5px;
+  border-radius: 3px;
+  color: var(--accent-2);
+}
+
+/* legacy cheatsheet styles (still used by .cheat-section/.cheat-grid inside drawer) */
+.cheatsheet-legacy {
   background: var(--bg-2);
   border-top: 1px solid var(--border);
   padding: 10px 14px 14px;

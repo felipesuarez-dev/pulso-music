@@ -83,9 +83,9 @@ export class Sequencer {
     row.className = "seq-row";
     const label = document.createElement("div");
     label.className = "seq-label";
-    const voiceName = voice.kind === "drum"
-      ? voice.drumKind ?? "drum"
-      : voice.wave ?? "synth";
+    const voiceName: string = voice.kind === "drum"
+      ? (voice.drumKind ?? "drum")
+      : (voice.wave ?? "synth");
     label.textContent = `${trackName} · ${voiceName}`;
     row.appendChild(label);
 

@@ -47,15 +47,25 @@ export class Transport {
     await ensureRunning();
     this.runtime.play();
     this.playing = true;
-    this.btnPlay.textContent = t("stop");
     this.btnPlay.classList.add("active");
+    this.swapIcon(true);
   }
 
   private stop(): void {
     this.runtime.stop();
     this.playing = false;
-    this.btnPlay.textContent = t("play");
     this.btnPlay.classList.remove("active");
+    this.swapIcon(false);
+  }
+
+  private swapIcon(playing: boolean): void {
+    const iconPlay = document.getElementById("icon-play");
+    const iconStop = document.getElementById("icon-stop");
+    if (iconPlay) iconPlay.classList.toggle("hidden", playing);
+    if (iconStop) iconStop.classList.toggle("hidden", !playing);
+    this.btnPlay.setAttribute("title", playing
+      ? t("stop") + " (espacio)"
+      : t("play") + " (espacio)");
   }
 
   // Llamable desde fuera para forzar pausa (p. ej. al detectar error de código).

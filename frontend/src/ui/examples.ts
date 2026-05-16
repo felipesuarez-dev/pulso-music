@@ -154,37 +154,39 @@ export const EXAMPLES: Example[] = [
     name: "🇨🇱 Tren al Sur — Los Prisioneros (homenaje)",
     code:
 `// Homenaje a 'Tren al Sur' (Los Prisioneros, 1990).
-// Synth-pop en MI menor (Em). Progresión clásica: Em - DO - SOL - RE (i - VI - III - VII).
-// El bajo machaca el tonic ochenta-style; el arp recorre el acorde; el lead canta el motivo.
+// MI menor, 120 BPM. Progresión Em - C - G - D (i - VI - III - VII).
+// Motivo del coro "Siete y media en la mañana": SI SI LA SOL · FA# SOL LA SI
+//                                                 5  5  4  b3   2  b3 4  5  (en Em)
 pulso()
   .bpm(120)
   .track('drums')
     .drum('kick').pattern('x...x...x...x...')
     .drum('snare').pattern('....x.......x...')
     .drum('hat').pattern('xxxxxxxxxxxxxxxx').volume(0.4)
-  .track('bajo').volume(0.9)
+    .drum('shaker').pattern('..x...x...x...x.').volume(0.5)
+  .track('bajo').volume(0.95)
     .synth('square')
       .scale('Em')
-      // Em (1) → C (b6) → G (b3) → D (b7) en grados de Em
+      // Em (1) → C (b6) → G (b3) → D (b7): un beat por acorde, 4 acordes en el ciclo
       .notes('1 1 1 1 b6 b6 b6 b6 b3 b3 b3 b3 b7 b7 b7 b7')
-      .filter(440).release(0.2).octave(2)
-  .track('arp').pan(-0.4).volume(0.55)
+      .filter(420).release(0.18).octave(2)
+  .track('arp').pan(-0.45).volume(0.45)
     .synth('square')
       .scale('Em')
-      // arpegio cíclico que sigue los cambios de acorde
+      // Arpegio que recorre la triada de cada acorde en su beat
       .notes("1 b3 5 b3 b6, 1 b3 1 b3 5 b7 5 b7 2 4 2")
       .filter(2100).release(0.12)
-  .track('lead').pan(0.4).volume(0.7)
+  .track('lead').pan(0.45).volume(0.75)
     .synth('triangle')
       .scale('Em')
-      // motivo descendente del coro, con sostenidos para que respire
-      .notes("5 5 b3 1 _ b3 4 5 _ 4 b3 1 _ b7 1 _")
-      .filter(2500).attack(0.02).release(0.45)
-  .track('pad').pan(0).volume(0.4)
+      // Coro "Sie-te y me-dia... en la ma-ña-na" — 16 notas con respiraciones
+      .notes("5 5 4 b3 _ . 2 b3 4 5 _ . 4 b3 1 _")
+      .filter(2800).attack(0.02).release(0.4)
+  .track('pad').pan(0).volume(0.35)
     .synth('sawtooth')
       .scale('Em')
       .notes("1 _ _ _ b6 _ _ _ b3 _ _ _ b7 _ _ _")
-      .filter(1400).attack(0.3).release(1.2)
+      .filter(1300).attack(0.4).release(1.4)
   .play();
 `,
   },
@@ -193,37 +195,173 @@ pulso()
     name: "🇨🇱 Himno Nacional de Chile (homenaje)",
     code:
 `// Homenaje al Himno Nacional de Chile (Ramón Carnicer, 1828).
-// Marcha solemne en DO mayor — bombo en cada beat, melodía hymnal con
-// frase "Puro Chile, es tu cielo azulado": SOL SOL MI DO — DO RE MI FA SOL — bajada a DO.
+// Marcha solemne en DO mayor, 76 BPM. La frase del coro:
+// "Dul-ce pa-tria, re-ci-be los vo-tos"
+//   G  G  F  E  _  D  D  E  G  G  _  E
+//   5  5  4  3  _  2  2  3  5  5  _  3
 pulso()
-  .bpm(72)
+  .bpm(76)
   .track('marcha')
-    .drum('kick').pattern('x...x...x...x...').volume(0.7)
-    .drum('snare').pattern('..x...x...x...x.').volume(0.35)
-  .track('melodia').volume(0.85)
+    .drum('kick').pattern('x...x...x...x...').volume(0.75)
+    .drum('snare').pattern('..x...x...x...x.').volume(0.4)
+    .drum('cowbell').pattern('....x.......x...').volume(0.25)
+  .track('melodia').volume(0.9)
     .synth('triangle')
       .scale('DO mayor')
-      // "Pu-ro Chi-le, es tu cie-lo a-zu-la-do"
-      //   5  5  3  1   1  2  3  4  5  4  3  2  1  _  _  _
-      .notes("5 5 3 1 _ 1 2 3 4 5 4 3 2 1 _ _")
-      .filter(2400).attack(0.04).release(0.55)
+      // "Dul-ce pa-tria, re-ci-be los vo-tos" — coro reconocible
+      .notes("5 5 4 3 _ 2 2 3 5 5 _ 3 _ _ _ _")
+      .filter(2600).attack(0.04).release(0.55)
   .track('bajo').volume(0.85)
     .synth('triangle')
       .scale('DO mayor')
-      // I - V - IV - I (DO - SOL - FA - DO)
-      .notes('1 _ _ _ 5 _ _ _ 4 _ _ _ 1 _ _ _')
+      // I - V - vi - I  (clásica progresión hymnal)
+      .notes('1 _ _ _ 5 _ _ _ 6 _ _ _ 1 _ _ _')
       .filter(620).release(0.7).octave(2)
-  .track('cuerdas').pan(-0.35).volume(0.6)
+  .track('cuerdas').pan(-0.3).volume(0.55)
     .synth('sine')
       .scale('DO mayor')
-      // Triada interna: 3 - 7 - 6 - 5 (movimiento por grados conjuntos)
-      .notes("3 _ _ _ 7 _ _ _ 6 _ _ _ 5 _ _ _")
+      // Contramelodía estática que arma el acorde
+      .notes("3 _ _ _ 7 _ _ _ 1' _ _ _ 3 _ _ _")
       .filter(1700).attack(0.3).release(1.4)
-  .track('coro').pan(0.35).volume(0.5)
+  .track('coro').pan(0.3).volume(0.55)
     .synth('triangle')
       .scale('DO mayor')
-      .notes("1' _ _ _ 5 _ _ _ 6 _ _ _ 5 _ _ _")
+      .notes("1' _ _ _ 2' _ _ _ 3' _ _ _ 5 _ _ _")
       .filter(2000).attack(0.2).release(1.0)
+  .play();
+`,
+  },
+  {
+    id: "pokemon-battle",
+    name: "🎮 Pokemon battle (chiptune)",
+    code:
+`// Tema de batalla estilo Pokemon Gen 1/2 (Game Boy).
+// Chiptune en LA menor, rápido y agresivo. Dos canales pulse + drum sintética.
+pulso()
+  .bpm(150)
+  .track('drums')
+    .drum('kick').pattern('x.x.x.x.x.x.x.x.').volume(0.6)
+    .drum('snare').pattern('....x.......x...').volume(0.5)
+    .drum('hat').pattern('..x...x...x...x.').volume(0.35)
+  .track('bass').volume(0.85)
+    .synth('square')
+      .scale('Am')
+      // Bajo bouncing tonic/quinta — patrón de pelea
+      .notes("1 . 5, 1 1 . 5, 1 b6 . b3 b6 b6 . b3 b6")
+      .filter(700).release(0.1).octave(2)
+  .track('lead').pan(0.3).volume(0.7)
+    .synth('square')
+      .scale('Am')
+      // Arpegio rápido tipo Gen 1
+      .notes("1' b3' 5' 1'' 5' b3' 1' 5 1' b3' 5' 1'' 5' 4' b3' 2'")
+      .filter(3500).release(0.08)
+  .track('counter').pan(-0.3).volume(0.5)
+    .synth('triangle')
+      .scale('Am')
+      // Bajo de triangle complementario
+      .notes("1 5 1' 5 1 5 1' 5 b6 b3 b6 b3 b7 4 b7 4")
+      .filter(1500).release(0.15).octave(3)
+  .play();
+`,
+  },
+  {
+    id: "cueca-chilena",
+    name: "🇨🇱 Cueca chilena (folk)",
+    code:
+`// Cueca: baile nacional chileno. Tempo enérgico, rasgueo y pandero.
+// Aproximación con cowbell + percs + bajo simple + melodía guitarra.
+pulso()
+  .bpm(120)
+  .track('rasgueo')
+    .drum('shaker').pattern('xxxxxxxxxxxxxxxx').volume(0.55)
+    .drum('cowbell').pattern('x..x..x.x..x..x.').volume(0.5)
+  .track('palmas')
+    .drum('clap').pattern('....x.......x...').volume(0.4)
+  .track('bajo').volume(0.85)
+    .synth('triangle')
+      .scale('DO mayor')
+      // Bajo tipo tumbao: tonic/dominante alternados
+      .notes('1 . 5 . 1 . 5 . 4 . 1 . 5 . 1 .')
+      .filter(700).release(0.25).octave(2)
+  .track('guitarra').pan(-0.3).volume(0.7)
+    .synth('triangle')
+      .scale('DO mayor')
+      // Melodía típica de cueca, salta entre tonic y dominante
+      .notes("3 5 1' 5 3 5 1' 5 4 6 1' 6 5 3 1 3")
+      .filter(2400).release(0.2)
+  .track('floreo').pan(0.4).volume(0.55)
+    .synth('square')
+      .scale('DO mayor')
+      .notes("5' . 3' . 5' . 1'' . 4' . 2' . 5' . 3' .")
+      .every(2).filter(2800).release(0.18)
+  .play();
+`,
+  },
+  {
+    id: "rock-anthem",
+    name: "🤘 Rock anthem (power chords)",
+    code:
+`// Rock anthem en MI menor. Drum kit completo, bajo de octavas, guitarra distorsionada (saw filtrada).
+pulso()
+  .bpm(132)
+  .track('drums')
+    .drum('kick').pattern('x...x...x...x...')
+    .drum('snare').pattern('....x.......x...')
+    .drum('hat').pattern('x.x.x.x.x.x.x.x.').volume(0.5)
+    .drum('ride').pattern('....x.......x...').volume(0.4)
+  .track('crash')
+    .drum('clap').pattern('x...............').volume(0.6)
+  .track('bass').volume(0.9)
+    .synth('sawtooth')
+      .scale('Em')
+      // Bajo en octavas alternadas — palanca rock típica
+      .notes('1 1 1, 1 1 1 1, 1 4 4 4, 4 b6 b6 b6, b6')
+      .filter(380).release(0.12).octave(2)
+  .track('guitar').pan(-0.4).volume(0.7)
+    .synth('sawtooth')
+      .scale('Em')
+      // Power chords (tónica + quinta + octava simulada en arpegio rápido)
+      .notes("1 5 1' 1 5 1' 1 5 4 1' 4 1' 4 1' b6 1'")
+      .filter(2200).release(0.18)
+  .track('lead').pan(0.4).volume(0.55)
+    .synth('sawtooth')
+      .scale('Em pent')
+      // Solo pentatónico
+      .notes("5 b7 1' 5 b7 1' b3' 1' 5 4 1 b3 5 4 b3 1")
+      .every(2).filter(3000).release(0.3)
+  .play();
+`,
+  },
+  {
+    id: "lofi-hiphop",
+    name: "🌊 Lo-fi hip hop (chill)",
+    code:
+`// Lo-fi hip hop slow. Pads cálidos, kick suave, bajo redondo, vinilo perc.
+pulso()
+  .bpm(76)
+  .track('drums')
+    .drum('kick').pattern('x.......x.......').volume(0.7)
+    .drum('snare').pattern('....x.......x...').volume(0.45)
+    .drum('hat').pattern('x.x.x.x.x.x.x.x.').volume(0.3)
+    .drum('perc').pattern('..x.....x...x.x.').volume(0.35)
+  .track('bass').volume(0.85)
+    .synth('sine')
+      .scale('Fm')
+      // Bajo redondo, una nota por compás
+      .notes('1 _ _ _ b7 _ _ _ b6 _ _ _ 5 _ _ _')
+      .filter(280).release(0.6).octave(2)
+  .track('chords').pan(-0.3).volume(0.5)
+    .synth('triangle')
+      .scale('Fm')
+      // Pad caliente, sustains largos
+      .notes("1 _ _ b3 _ _ 5 _ _ b7 _ _ 5 _ _ _")
+      .filter(1100).attack(0.3).release(1.2)
+  .track('melody').pan(0.3).volume(0.55)
+    .synth('triangle')
+      .scale('Fm pent')
+      // Frase melódica jazzy con espacios
+      .notes("1' . . b3' . 5' . . 4' . b3' 1' . . b7 .")
+      .every(2).filter(2200).release(0.45)
   .play();
 `,
   },

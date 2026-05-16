@@ -18,7 +18,10 @@ export interface Lint {
 }
 
 const VALID_PATTERN_CHARS = /^[xX._\-\s]*$/;
-const KNOWN_DRUMS = new Set(["kick", "snare", "hat", "clap"]);
+const KNOWN_DRUMS = new Set([
+  "kick", "snare", "hat", "clap",
+  "tom", "rim", "cowbell", "ride", "shaker", "perc",
+]);
 const KNOWN_WAVES = new Set(["sine", "square", "sawtooth", "triangle"]);
 
 const TYPOS: Array<[RegExp, string]> = [
@@ -108,7 +111,7 @@ export function lintCode(code: string): Lint[] {
         out.push({
           severity: "error",
           ...lineColAt(code, m.index),
-          message: `drum «${kind}» no existe — usa kick / snare / hat / clap`,
+          message: `drum «${kind}» no existe — kick/snare/hat/clap/tom/rim/cowbell/ride/shaker/perc`,
         });
       }
     }
