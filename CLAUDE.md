@@ -20,7 +20,7 @@ Pulso es un entorno de live coding musical en TypeScript. Lee este archivo antes
 ./manage.sh push-all      # ambos remotes
 ```
 
-El servidor escucha en `0.0.0.0:4000` por defecto. Editable en `.env`.
+El servidor escucha en `0.0.0.0:4040` por defecto (4000 lo usa code-server en este host). Editable en `.env` con `PORT=`.
 
 ## Convención de commits
 

@@ -9,7 +9,7 @@ cp .env.example .env
 ./manage.sh start
 ```
 
-Abre `http://192.168.1.2:4000` desde cualquier dispositivo en tu LAN.
+Abre `http://192.168.1.2:4040` desde cualquier dispositivo en tu LAN.
 
 ## Características
 

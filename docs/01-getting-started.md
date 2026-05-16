@@ -16,21 +16,21 @@ cp .env.example .env   # opcional — sólo si vas a empujar a Gitea/GitHub
 Verás un log:
 
 ```
-pulso listening on http://0.0.0.0:4000 (dev=true)
+pulso listening on http://0.0.0.0:4040 (dev=true)
 ```
 
 ## Acceso desde la red
 
 | Desde | URL |
 | --- | --- |
-| Este mismo equipo | http://localhost:4000 |
-| LAN (otros dispositivos en la red) | http://192.168.1.2:4000 |
-| Tailscale | http://100.105.21.49:4000 |
+| Este mismo equipo | http://localhost:4040 |
+| LAN (otros dispositivos en la red) | http://192.168.1.2:4040 |
+| Tailscale | http://100.105.21.49:4040 |
 
 Si tu firewall bloquea el puerto:
 
 ```bash
-echo "$(cat ~/.sudo_pass)" | sudo -S ufw allow 4000/tcp
+echo "$(cat ~/.sudo_pass)" | sudo -S ufw allow 4040/tcp
 ```
 
 ## Tu primer beat

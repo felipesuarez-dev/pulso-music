@@ -48,14 +48,14 @@ case "$cmd" in
     : "${GITEA_URL:?Falta GITEA_URL en .env}"
     : "${GITEA_USER:?Falta GITEA_USER en .env}"
     : "${GITEA_TOKEN:?Falta GITEA_TOKEN en .env}"
-    repo_name="$(basename "$ROOT")"
-    echo "Creando repo $GITEA_USER/$repo_name en Gitea..."
+    repo_name="${GITEA_REPO:-$(basename "$ROOT")}"
+    echo "→ Verificando/creando repo $GITEA_USER/$repo_name en Gitea..."
     curl -fsSL -X POST \
       -H "Authorization: token $GITEA_TOKEN" \
       -H "Content-Type: application/json" \
       "$GITEA_URL/api/v1/user/repos" \
       -d "{\"name\":\"$repo_name\",\"description\":\"Pulso — entorno de live coding musical en TypeScript\",\"private\":false,\"auto_init\":false}" \
-      || echo "(quizás ya existe — continúo)"
+      >/dev/null 2>&1 || echo "  (ya existía o falló creación — continúo con push)"
     remote_url="${GITEA_URL%/}/$GITEA_USER/$repo_name.git"
     auth_url="${GITEA_URL%/}"
     auth_url="${auth_url/http:\/\//http://$GITEA_USER:$GITEA_TOKEN@}"
@@ -65,27 +65,30 @@ case "$cmd" in
     git remote add gitea "$auth_url"
     git push -u gitea main
     git remote set-url gitea "$remote_url"
-    echo "Listo: $remote_url"
+    echo "✓ Gitea: $remote_url"
     ;;
 
   push-github)
+    # Push por SSH (no requiere token si tu SSH key ya está autorizada en GitHub).
+    # Asume que el repo ya existe en github.com/$GITHUB_USER/$GITHUB_REPO.
+    # Para crear via API si no existe, define GITHUB_TOKEN en .env.
     : "${GITHUB_USER:?Falta GITHUB_USER en .env}"
-    : "${GITHUB_TOKEN:?Falta GITHUB_TOKEN en .env}"
-    repo_name="$(basename "$ROOT")"
-    echo "Creando repo $GITHUB_USER/$repo_name en GitHub..."
-    curl -fsSL -X POST \
-      -H "Authorization: token $GITHUB_TOKEN" \
-      -H "Accept: application/vnd.github+json" \
-      https://api.github.com/user/repos \
-      -d "{\"name\":\"$repo_name\",\"description\":\"Pulso — entorno de live coding musical en TypeScript\",\"private\":false,\"auto_init\":false}" \
-      || echo "(quizás ya existe — continúo)"
-    auth_url="https://$GITHUB_USER:$GITHUB_TOKEN@github.com/$GITHUB_USER/$repo_name.git"
-    plain_url="https://github.com/$GITHUB_USER/$repo_name.git"
+    repo_name="${GITHUB_REPO:-$(basename "$ROOT")}"
+    if [[ -n "${GITHUB_TOKEN:-}" ]]; then
+      echo "→ Verificando/creando repo $GITHUB_USER/$repo_name en GitHub (vía API)..."
+      curl -fsSL -X POST \
+        -H "Authorization: token $GITHUB_TOKEN" \
+        -H "Accept: application/vnd.github+json" \
+        https://api.github.com/user/repos \
+        -d "{\"name\":\"$repo_name\",\"description\":\"Pulso — entorno de live coding musical en TypeScript\",\"private\":false,\"auto_init\":false}" \
+        >/dev/null 2>&1 || echo "  (ya existía o falló creación — continúo con push)"
+    fi
+    ssh_url="git@github.com:$GITHUB_USER/$repo_name.git"
     git remote remove github 2>/dev/null || true
-    git remote add github "$auth_url"
-    git push -u github main
-    git remote set-url github "$plain_url"
-    echo "Listo: $plain_url"
+    git remote remove origin 2>/dev/null || true
+    git remote add origin "$ssh_url"
+    git push -u origin main
+    echo "✓ GitHub: https://github.com/$GITHUB_USER/$repo_name"
     ;;
 
   push-all)
