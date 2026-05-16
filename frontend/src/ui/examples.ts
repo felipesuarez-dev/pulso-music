@@ -150,6 +150,72 @@ export const EXAMPLES: Example[] = [
 `,
   },
   {
+    id: "tren-al-sur",
+    name: "🇨🇱 Tren al Sur — Los Prisioneros (homenaje)",
+    code:
+`// Homenaje synth-pop a 'Tren al Sur' de Los Prisioneros (1990).
+// Drum machine + bajo arpegiado + acordes synth + melodía en Em.
+pulso()
+  .bpm(118)
+  .track('drums')
+    .drum('kick').pattern('x...x...x...x...')
+    .drum('snare').pattern('....x.......x...')
+    .drum('hat').pattern('x.x.x.x.x.x.x.x.').volume(0.45)
+  .track('clap').volume(0.4)
+    .drum('clap').pattern('....x.......x...').every(2)
+  .track('bajo').volume(0.9)
+    .synth('sawtooth')
+      .scale('Em')
+      .notes('1 . 1 . 5 . 1 . 1 . 1 . 5 . 1 b7')
+      .filter(440).release(0.18).octave(2)
+  .track('acordes').pan(-0.35).volume(0.55)
+    .synth('square')
+      .scale('Em')
+      .notes("1 b3 5 1' 5 b3 1 5 1 b3 5 1' 5 b3 1 5")
+      .filter(2000).release(0.15)
+  .track('lead').pan(0.4).volume(0.6)
+    .synth('triangle')
+      .scale('Em pent')
+      .notes("5' . . 4' . b3' . 1' . . . b7 . 5 . .")
+      .every(2).filter(2800).release(0.5)
+  .play();
+`,
+  },
+  {
+    id: "himno-chile",
+    name: "🇨🇱 Himno Nacional de Chile (homenaje)",
+    code:
+`// Homenaje al Himno Nacional de Chile.
+// Marcha lenta en DO mayor con bombo, cuerdas, bajo y melodía.
+pulso()
+  .bpm(76)
+  .track('marcha')
+    .drum('kick').pattern('x...x...x...x...').volume(0.7)
+    .drum('snare').pattern('..x...x...x...x.').volume(0.4)
+  .track('melodia').volume(0.75)
+    .synth('triangle')
+      .scale('DO mayor')
+      .notes("5 5 . 3 4 5 . 1' 7 1' 2' . 1' 7 6 5")
+      .filter(2400).attack(0.04).release(0.45)
+  .track('bajo').volume(0.85)
+    .synth('triangle')
+      .scale('DO mayor')
+      .notes('1 _ _ _ 5 _ _ _ 6 _ _ _ 5 _ _ _')
+      .filter(620).release(0.6).octave(2)
+  .track('cuerdas').pan(-0.35).volume(0.55)
+    .synth('sine')
+      .scale('DO mayor')
+      .notes("1 _ _ _ 3 _ _ _ 4 _ _ _ 3 _ _ _")
+      .filter(1700).attack(0.25).release(1.2)
+  .track('contramelodia').pan(0.4).volume(0.5)
+    .synth('sine')
+      .scale('DO mayor')
+      .notes("3 _ . 1 2 3 _ 5 4 5 6 _ 5 4 3 2")
+      .filter(2200).attack(0.1).release(0.6)
+  .play();
+`,
+  },
+  {
     id: "latina-bossa",
     name: "Bossa latina — DO RE MI con 4 pistas",
     code:
