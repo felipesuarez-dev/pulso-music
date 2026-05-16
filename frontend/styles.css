@@ -234,8 +234,9 @@ button.flash {
 }
 .step-indicator #step-text {
   display: inline-block;
-  min-width: 110px;
+  min-width: 42px;        /* "16/16" = 5 chars en monospace 12px */
   font-variant-numeric: tabular-nums;
+  text-align: left;
 }
 .step-indicator .dot {
   width: 8px;

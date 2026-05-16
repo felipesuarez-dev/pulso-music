@@ -233,7 +233,8 @@ function bootstrap(): void {
   runtime.onStep((step, cycle) => {
     grid.highlight(step);
     sequencer.highlight(step);
-    stepText.textContent = `${step + 1}/16 · ciclo ${cycle + 1}`;
+    stepText.textContent = `${step + 1}/16`;
+    stepIndicator.title = `step ${step + 1}/16 · ciclo ${cycle + 1}`;
     stepIndicator.classList.add("active");
     // ilumina las líneas que están disparando en este step
     editor.setPlayingLines(findFiringLines(editor.getCode(), step));
