@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0e0f12" />
+  <title>Pulso — live coding musical</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <h1 class="brand">pulso<span class="dot">.</span></h1>
+    <div class="controls">
+      <button id="btn-play" class="primary" data-i18n="play">Tocar</button>
+      <button id="btn-stop" data-i18n="stop">Parar</button>
+      <span class="bpm">
+        <label data-i18n="bpm">BPM</label>
+        <span id="bpm-display">120</span>
+      </span>
+      <span id="ctx-warning" class="hidden warn" data-i18n="ctxSuspended">Toca cualquier botón para activar el audio</span>
+    </div>
+    <div class="prefs">
+      <label>
+        <span data-i18n="notation">Notación</span>
+        <select id="sel-notation">
+          <option value="anglo">C D E (anglo)</option>
+          <option value="latina">DO RE MI (latina)</option>
+        </select>
+      </label>
+      <label>
+        <span data-i18n="lang">Idioma</span>
+        <select id="sel-lang">
+          <option value="es">ES</option>
+          <option value="en">EN</option>
+        </select>
+      </label>
+      <button id="btn-export-midi" data-i18n="exportMidi">Export MIDI</button>
+    </div>
+  </header>
+
+  <main class="layout">
+    <section class="editor-pane">
+      <div class="editor-toolbar">
+        <span class="hint" data-i18n="hintEval">Ctrl+Enter para evaluar</span>
+        <button id="btn-save" data-i18n="save">Guardar</button>
+        <select id="sel-patches" aria-label="patches"></select>
+        <button id="btn-load" data-i18n="load">Cargar</button>
+        <button id="btn-delete" data-i18n="delete">Borrar</button>
+      </div>
+      <textarea id="editor" spellcheck="false" autocapitalize="off" autocorrect="off"></textarea>
+      <pre id="error-panel" class="error hidden"></pre>
+    </section>
+
+    <aside class="side-pane">
+      <section class="card">
+        <h2 data-i18n="grid">Grid del patrón</h2>
+        <div id="grid" class="grid"></div>
+        <p id="grid-hint" class="hint" data-i18n="gridHint">Pon el cursor en una línea con .pattern(...)</p>
+      </section>
+
+      <section class="card">
+        <h2 data-i18n="mixer">Mixer</h2>
+        <div id="mixer" class="mixer"></div>
+      </section>
+
+      <section class="card">
+        <h2 data-i18n="visualizer">Visualizador</h2>
+        <canvas id="waveform" width="560" height="160"></canvas>
+        <canvas id="spectrum" width="560" height="80"></canvas>
+      </section>
+
+      <section class="card">
+        <h2 data-i18n="nowPlaying">Próximas notas</h2>
+        <ol id="now-playing" class="now-playing"></ol>
+      </section>
+    </aside>
+  </main>
+
+  <script type="module" src="/bundle.js"></script>
+</body>
+</html>

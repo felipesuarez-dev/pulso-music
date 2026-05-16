@@ -1,0 +1,6 @@
+.env
+data/
+*.log
+.DS_Store
+dist/
+.bundle-cache/
