@@ -9,6 +9,11 @@ export type EvalCb = () => void;
 
 export class Transport {
   private playing = false;
+  private stateCbs = new Set<(playing: boolean) => void>();
+
+  onStateChange(cb: (playing: boolean) => void): void {
+    this.stateCbs.add(cb);
+  }
 
   private tapTimes: number[] = [];
 
@@ -49,6 +54,7 @@ export class Transport {
     this.playing = true;
     this.btnPlay.classList.add("active");
     this.swapIcon(true);
+    this.stateCbs.forEach((cb) => cb(true));
   }
 
   private stop(): void {
@@ -56,6 +62,7 @@ export class Transport {
     this.playing = false;
     this.btnPlay.classList.remove("active");
     this.swapIcon(false);
+    this.stateCbs.forEach((cb) => cb(false));
   }
 
   private swapIcon(playing: boolean): void {

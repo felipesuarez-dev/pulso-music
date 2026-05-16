@@ -11,12 +11,14 @@ export type InputCb = (code: string) => void;
 
 export class Editor {
   private inputCbs = new Set<InputCb>();
+  private playingLines = new Set<number>();
 
   constructor(
     private readonly el: HTMLTextAreaElement,
     private readonly onEval: EvalCb,
     private readonly onCursorLine: CursorLineCb,
     private readonly gutter?: HTMLElement,
+    private readonly overlay?: HTMLElement,
   ) {
     this.el.addEventListener("keydown", (e) => this.onKey(e));
     const emit = () => this.emitCursor();
@@ -56,6 +58,14 @@ export class Editor {
     this.renderGutter();
   }
 
+  // Marca las líneas que están "disparando" música ahora mismo.
+  // Se llama desde el runtime.onStep en main.ts.
+  setPlayingLines(lines: Set<number>): void {
+    this.playingLines = lines;
+    this.renderOverlay();
+    this.renderGutter();
+  }
+
   private errorLines = new Set<number>();
 
   private renderGutter(): void {
@@ -63,18 +73,34 @@ export class Editor {
     const total = this.getLineCount();
     let html = "";
     for (let i = 1; i <= total; i++) {
-      const cls = this.errorLines.has(i) ? "err" : "";
-      html += cls
-        ? `<span class="err">${i}</span>\n`
-        : `${i}\n`;
+      if (this.errorLines.has(i))       html += `<span class="err">${i}</span>\n`;
+      else if (this.playingLines.has(i)) html += `<span class="playing">${i}</span>\n`;
+      else                               html += `${i}\n`;
     }
     this.gutter.innerHTML = html;
     this.syncScroll();
   }
 
+  private renderOverlay(): void {
+    if (!this.overlay) return;
+    this.overlay.innerHTML = "";
+    if (this.playingLines.size === 0) return;
+    const cs = getComputedStyle(this.el);
+    const lineHeight = parseFloat(cs.lineHeight || "22");
+    const padTop = parseFloat(cs.paddingTop || "16");
+    for (const ln of this.playingLines) {
+      const div = document.createElement("div");
+      div.className = "line-hl";
+      const top = padTop + (ln - 1) * lineHeight - this.el.scrollTop;
+      div.style.top = `${top}px`;
+      div.style.height = `${lineHeight}px`;
+      this.overlay.appendChild(div);
+    }
+  }
+
   private syncScroll(): void {
-    if (!this.gutter) return;
-    this.gutter.scrollTop = this.el.scrollTop;
+    if (this.gutter) this.gutter.scrollTop = this.el.scrollTop;
+    this.renderOverlay();
   }
 
   setCode(code: string): void {

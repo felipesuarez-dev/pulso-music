@@ -49,6 +49,7 @@ function bootstrap(): void {
 
   const editorEl   = $<HTMLTextAreaElement>("#editor");
   const gutterEl   = $<HTMLElement>("#gutter");
+  const overlayEl  = $<HTMLElement>("#editor-overlay");
   const consoleLog = $<HTMLOListElement>("#console-log");
   const consoleStatus = $<HTMLElement>("#console-status");
   const btnConsoleClear = $<HTMLButtonElement>("#btn-console-clear");
@@ -173,6 +174,7 @@ function bootstrap(): void {
     (code) => runOnce(code),
     (line) => grid.showFromLine(line),
     gutterEl,
+    overlayEl,
   );
 
   // Linter en vivo (debounced) — corre sin evaluar; sólo pinta marcas y consola
@@ -211,6 +213,15 @@ function bootstrap(): void {
 
   visualizer.start();
 
+  // Cuando el transport se detiene, limpia las luces de líneas y el indicador.
+  transport.onStateChange((playing) => {
+    if (!playing) {
+      editor.setPlayingLines(new Set());
+      stepIndicator.classList.remove("active");
+      stepText.textContent = "listo";
+    }
+  });
+
   // 4. Cablear handlers que dependen de los componentes
   setPlayHandler((session) => {
     runtime.setSession(session);
@@ -224,7 +235,46 @@ function bootstrap(): void {
     sequencer.highlight(step);
     stepText.textContent = `${step + 1}/16 · ciclo ${cycle + 1}`;
     stepIndicator.classList.add("active");
+    // ilumina las líneas que están disparando en este step
+    editor.setPlayingLines(findFiringLines(editor.getCode(), step));
   });
+
+  // Al parar, limpiar luces de líneas y el step indicator
+  // (transport se crea más abajo; el suscriptor se añade después)
+
+
+  // Escanea el código y devuelve los números de línea (1-indexed) cuyo
+  // .pattern() o .notes() dispara en este step. Re-corre cada step (cheap).
+  function findFiringLines(code: string, step: number, totalSteps = 16): Set<number> {
+    const set = new Set<number>();
+    const lines = code.split("\n");
+    for (let i = 0; i < lines.length; i++) {
+      const ln = lines[i] ?? "";
+      // .pattern('xxxx') → fire si el char en el step actual es x/X
+      const patMatch = /\.pattern\(\s*['"]([x._\s\-]+)['"]/.exec(ln);
+      if (patMatch) {
+        const clean = (patMatch[1] ?? "").replace(/\s+/g, "");
+        if (clean.length > 0) {
+          const ch = clean[step % clean.length];
+          if (ch === "x" || ch === "X") set.add(i + 1);
+        }
+        continue;
+      }
+      // .notes('...') → fire si en este step entra una nota nueva (no . _ ~)
+      const notesMatch = /\.notes\(\s*['"]([^'"]+)['"]/.exec(ln);
+      if (notesMatch) {
+        const notes = (notesMatch[1] ?? "").split(/\s+/).filter((t) => t.length > 0);
+        if (notes.length === 0) continue;
+        const idxNow  = Math.floor((step       * notes.length) / totalSteps);
+        const idxPrev = step === 0 ? -1
+                       : Math.floor(((step - 1) * notes.length) / totalSteps);
+        if (idxNow === idxPrev) continue;
+        const note = notes[idxNow % notes.length];
+        if (note && note !== "." && note !== "_" && note !== "~") set.add(i + 1);
+      }
+    }
+    return set;
+  }
 
   // i18n + listeners
   applyI18n();

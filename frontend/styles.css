@@ -281,13 +281,35 @@ button.flash {
 .editor-toolbar .hint { color: var(--text-dim); font-size: 12px; margin-right: auto; }
 .editor-toolbar select { flex: 1; min-width: 120px; max-width: 240px; }
 
-/* Wrap: gutter (line numbers) + textarea como flex row */
+/* Wrap: gutter (line numbers) + editor-inner como flex row */
 .editor-wrap {
   flex: 1;
   display: flex;
   min-height: 200px;
   background: var(--bg);
   overflow: hidden;
+}
+.editor-inner {
+  position: relative;
+  flex: 1;
+  background: var(--bg);
+  overflow: hidden;
+  display: flex;
+}
+.editor-overlay {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  pointer-events: none;
+  z-index: 1;
+  overflow: hidden;
+}
+.editor-overlay .line-hl {
+  position: absolute;
+  left: 0;
+  right: 0;
+  background: rgba(126, 231, 135, 0.13);
+  border-left: 3px solid var(--ok);
+  /* sin transition para que el cambio entre steps sea inmediato y no se solape */
 }
 .gutter {
   margin: 0;
@@ -311,11 +333,18 @@ button.flash {
   font-weight: 700;
   background: rgba(255, 107, 107, 0.15);
 }
+.gutter .playing {
+  color: var(--ok);
+  font-weight: 700;
+  background: rgba(126, 231, 135, 0.18);
+}
 
 #editor {
   flex: 1;
   width: 100%;
-  background: var(--bg);
+  background: transparent;          /* el overlay (luz verde de línea) se ve detrás */
+  position: relative;
+  z-index: 2;
   color: var(--text);
   caret-color: var(--accent);       /* caret naranja brillante — siempre visible */
   border: 0;
