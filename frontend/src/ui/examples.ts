@@ -233,34 +233,81 @@ pulso()
   },
   {
     id: "pokemon-battle",
-    name: "🎮 Pokemon battle (chiptune)",
+    name: "🎮 Pokemon battle — completa con estructura (16 ciclos)",
     code:
-`// Tema de batalla estilo Pokemon Gen 1/2 (Game Boy).
-// Chiptune en LA menor, rápido y agresivo. Dos canales pulse + drum sintética.
+`// Pokemon battle theme estilo Gen 1/2 (Game Boy).
+// 10 pistas en LA menor a 150 BPM con estructura intro/verso/coro.
+// Chiptune real: 2 canales pulse (square) + triangle bass + drum sintética.
 pulso()
   .bpm(150)
-  .track('drums')
-    .drum('kick').pattern('x.x.x.x.x.x.x.x.').volume(0.6)
-    .drum('snare').pattern('....x.......x...').volume(0.5)
-    .drum('hat').pattern('..x...x...x...x.').volume(0.35)
-  .track('bass').volume(0.85)
+  .songLength(16)
+
+  // ─── INTRO 0–3: build de tensión ──────────────────────────
+  .track('intro-kick').volume(0.7)
+    .drum('kick').pattern('x.......x.......').during(0, 3)
+  .track('intro-hat').volume(0.4)
+    .drum('hat').pattern('x.x.x.x.x.x.x.x.').during(0, 3)
+  .track('intro-bass').volume(0.85)
     .synth('square')
       .scale('Am')
-      // Bajo bouncing tonic/quinta — patrón de pelea
+      // Bajo de octavas tipo "anuncio" de batalla
+      .notes('1 . 1, . 1 . 1, . 1 . 1, . 1 . 1, .')
+      .filter(650).release(0.1).octave(2).during(0, 3)
+
+  // ─── VERSO 4–11: tema principal ──────────────────────────
+  .track('verso-drums')
+    .drum('kick').pattern('x.x.x.x.x.x.x.x.').during(4, 11).volume(0.65)
+    .drum('snare').pattern('....x.......x...').during(4, 11).volume(0.55)
+    .drum('hat').pattern('..x...x...x...x.').during(4, 11).volume(0.35)
+  .track('verso-bass').volume(0.9)
+    .synth('square')
+      .scale('Am')
+      // Bajo bouncing tonic/quinta — patrón de pelea Gen 1
       .notes("1 . 5, 1 1 . 5, 1 b6 . b3 b6 b6 . b3 b6")
-      .filter(700).release(0.1).octave(2)
-  .track('lead').pan(0.3).volume(0.7)
+      .filter(700).release(0.1).octave(2).during(4, 11)
+  .track('verso-lead').pan(0.4).volume(0.75)
     .synth('square')
+      // Lead pulse — arpegio descendente Game Boy
       .scale('Am')
-      // Arpegio rápido tipo Gen 1
       .notes("1' b3' 5' 1'' 5' b3' 1' 5 1' b3' 5' 1'' 5' 4' b3' 2'")
-      .filter(3500).release(0.08)
-  .track('counter').pan(-0.3).volume(0.5)
+      .filter(3500).release(0.08).during(4, 11)
+  .track('verso-counter').pan(-0.4).volume(0.55)
     .synth('triangle')
       .scale('Am')
-      // Bajo de triangle complementario
-      .notes("1 5 1' 5 1 5 1' 5 b6 b3 b6 b3 b7 4 b7 4")
-      .filter(1500).release(0.15).octave(3)
+      // Contramelodía en triangle (canal CH3 del Game Boy)
+      .notes("5 1' 5 b3' 5 1' 5 b3' b3 b6 b3 1' b3 b6 b3 1'")
+      .filter(1500).release(0.15).octave(3).during(4, 11)
+
+  // ─── CORO 12–15: explosión final ─────────────────────────
+  .track('coro-drums')
+    .drum('kick').pattern('x...x...x...x...').during(12, 15).volume(0.85)
+    .drum('snare').pattern('..x...x...x...x.').during(12, 15).volume(0.65)
+    .drum('hat').pattern('xxxxxxxxxxxxxxxx').during(12, 15).volume(0.4)
+    .drum('clap').pattern('....x.......x...').during(12, 15).volume(0.55)
+  .track('coro-bass').volume(0.95)
+    .synth('square')
+      .scale('Am')
+      // Bajo más denso siguiendo la progresión Am-F-Dm-E
+      .notes("1 1 1 1 b6 b6 b6 b6 4 4 4 4 5 5 5 5")
+      .filter(800).release(0.12).octave(2).during(12, 15)
+  .track('coro-lead-A').pan(0.4).volume(0.8)
+    .synth('square')
+      .scale('Am')
+      // Lead A: arpegio ascendente épico
+      .notes("5' 4' b3' 2' 1' 2' b3' 4' 5' b6' 5' 4' b3' 4' 5' 1''")
+      .filter(3800).release(0.06).during(12, 15)
+  .track('coro-lead-B').pan(-0.4).volume(0.6)
+    .synth('square')
+      .scale('Am')
+      // Lead B: armoniza una sexta abajo
+      .notes("b7 b6 5 4 b3 4 5 b6 b7 1' b7 b6 5 b6 b7 b3'")
+      .filter(2800).release(0.06).during(12, 15)
+  .track('coro-bell').pan(0).volume(0.5)
+    .synth('triangle')
+      .scale('Am')
+      // Campana en agudos cada beat para acento épico
+      .notes("1'' . . . 5' . . . 1'' . . . b7' . . .")
+      .filter(3000).release(0.4).during(12, 15)
   .play();
 `,
   },
