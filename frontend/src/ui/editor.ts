@@ -110,8 +110,12 @@ export class Editor {
   }
 
   private onKey(e: KeyboardEvent): void {
-    if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+    // Más robusto: aceptar Enter, NumpadEnter, y tanto key como code.
+    const isEnter = e.key === "Enter" || e.code === "Enter" || e.code === "NumpadEnter";
+    const isMod = e.ctrlKey || e.metaKey;
+    if (isMod && isEnter) {
       e.preventDefault();
+      e.stopPropagation();
       this.onEval(this.el.value);
       return;
     }

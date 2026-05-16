@@ -58,9 +58,10 @@ button { -webkit-user-select: none; user-select: none; }
 .topbar {
   display: flex;
   align-items: center;
-  gap: 16px;
-  padding: 10px 14px;
-  padding-top: max(10px, env(safe-area-inset-top));
+  gap: 10px;
+  padding: 8px 12px;
+  padding-right: 56px;  /* deja sitio para el botón flotante 📘 DSL */
+  padding-top: max(8px, env(safe-area-inset-top));
   background: var(--bg-2);
   border-bottom: 1px solid var(--border);
   flex-wrap: wrap;
@@ -80,11 +81,11 @@ button { -webkit-user-select: none; user-select: none; }
 .section {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 4px 10px;
+  gap: 6px;
+  padding: 3px 8px;
   background: var(--bg-3);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: 6px;
 }
 .section.transport-section { border-color: var(--accent); }
 
@@ -168,13 +169,14 @@ button, select {
   color: var(--text);
   border: 1px solid var(--border);
   border-radius: 6px;
-  padding: 8px 14px;
-  font-size: 13px;
+  padding: 6px 12px;
+  font-size: 12px;
   cursor: pointer;
   font-family: inherit;
-  min-height: var(--tap);
+  min-height: 36px;
   touch-action: manipulation;
 }
+.topbar button, .topbar select { min-height: 34px; font-size: 12px; }
 button:hover, select:hover { border-color: var(--accent); }
 /* removido scale(0.98) en :active — el reflow visual hace que el cursor
    parezca brincar sobre el botón al pulsarlo */
@@ -328,7 +330,9 @@ button.flash {
   white-space: pre;
   min-height: 200px;
   -webkit-text-size-adjust: 100%;
-  cursor: text;
+  /* Cursor custom naranja con halo negro — visible sobre fondo oscuro
+     (el I-beam por defecto del SO suele ser negro y se pierde) */
+  cursor: url("/cursor-text.svg") 8 12, text;
 }
 
 /* Consola estilo terminal: lista de mensajes con icon + L<n> + mensaje */
@@ -400,13 +404,24 @@ button.flash {
 .console-log .entry.ok    .msg { color: var(--ok); }
 .console-log .entry.info  .msg { color: var(--text-dim); }
 
-/* ─── DSL Drawer (referencia lateral) ──────────────────────── */
+/* ─── DSL Drawer toggle: botón FIJO en la esquina superior derecha
+       Sale del flujo de la topbar para no romper la responsividad
+       del resto de los controles. ────────────────────────────── */
 .cheat-toggle {
+  position: fixed;
+  top: 8px;
+  right: 8px;
+  z-index: 80;
   background: var(--bg-3);
-  border-color: var(--accent);
+  border: 1px solid var(--accent);
   color: var(--accent);
-  font-weight: 600;
-  padding: 8px 14px;
+  font-weight: 700;
+  padding: 6px 10px;
+  font-size: 12px;
+  min-height: 32px;
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+  cursor: pointer;
 }
 .cheat-toggle:hover { background: var(--accent); color: #1a120a; }
 

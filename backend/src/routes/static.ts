@@ -42,6 +42,16 @@ export async function serveStatic(_req: Request, url: URL, dev: boolean): Promis
       },
     });
   }
+  if (p === "/cursor-text.svg") {
+    const f = Bun.file(`${FRONTEND_DIR}/cursor-text.svg`);
+    if (!(await f.exists())) return new Response("not found", { status: 404 });
+    return new Response(await f.text(), {
+      headers: {
+        "content-type": "image/svg+xml",
+        "cache-control": "public, max-age=86400",
+      },
+    });
+  }
   if (p === "/bundle.js") {
     try {
       const code = await getBundle(dev);
