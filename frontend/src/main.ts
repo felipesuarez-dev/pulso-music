@@ -3,35 +3,21 @@
 import { Runtime } from "./engine/runtime.ts";
 import { setPlayHandler } from "./dsl/builder.ts";
 import { evalUserCode } from "./dsl/eval.ts";
-import { formatNote } from "./dsl/notation.ts";
 import { Editor } from "./ui/editor.ts";
 import { Grid } from "./ui/grid.ts";
 import { Mixer } from "./ui/mixer.ts";
+import { Sequencer } from "./ui/sequencer.ts";
 import { Visualizer } from "./ui/waveform.ts";
 import { Transport } from "./ui/transport.ts";
-import { applyI18n, getLang, setLang, t } from "./ui/i18n.ts";
+import { applyI18n, getLang, setLang } from "./ui/i18n.ts";
 import { listPatches, getPatch, savePatch, deletePatch } from "./ui/patches.ts";
 import { ensureRunning, isSuspended, onStateChange } from "./engine/context.ts";
+import { EXAMPLES } from "./ui/examples.ts";
 import type { Notation } from "./types.ts";
 
-const DEFAULT_CODE = `pulso()
-  .bpm(120)
-  .track('drums')
-    .drum('kick').pattern('x...x...x...x...')
-    .drum('snare').pattern('....x.......x...')
-    .drum('hat').pattern('x.x.x.x.x.x.x.x.')
-  .track('bass').volume(0.7)
-    .synth('sawtooth')
-      .scale('Cm pent')
-      .notes("1 5 b7 1' 5 4 b3 1")
-      .filter(500).release(0.25)
-  .track('lead').pan(0.3)
-    .synth('triangle')
-      .scale('Cm pent')
-      .notes("1' 3' 5' 4' 3' 1' b7 5")
-      .every(2).filter(2200)
-  .play();
-`;
+// Default code: lo más simple posible — kick + snare. El user puede cargar
+// otros ejemplos del dropdown o escribir lo suyo.
+const DEFAULT_CODE = EXAMPLES[0]!.code;
 
 const $ = <T extends HTMLElement>(sel: string): T => {
   const el = document.querySelector<T>(sel);
@@ -45,22 +31,25 @@ const editorEl   = $<HTMLTextAreaElement>("#editor");
 const errorPanel = $<HTMLPreElement>("#error-panel");
 const gridEl     = $<HTMLElement>("#grid");
 const gridHint   = $<HTMLElement>("#grid-hint");
+const gridLabel  = $<HTMLElement>("#grid-label");
+const sequencerEl = $<HTMLElement>("#sequencer");
 const mixerEl    = $<HTMLElement>("#mixer");
 const waveCanvas = $<HTMLCanvasElement>("#waveform");
 const specCanvas = $<HTMLCanvasElement>("#spectrum");
 const btnPlay    = $<HTMLButtonElement>("#btn-play");
 const btnEval    = $<HTMLButtonElement>("#btn-eval");
 const btnExport  = $<HTMLButtonElement>("#btn-export-midi");
+const btnTap     = $<HTMLButtonElement>("#btn-tap");
 const bpmSlider  = $<HTMLInputElement>("#bpm-slider");
 const bpmDisplay = $<HTMLElement>("#bpm-display");
 const ctxWarn    = $<HTMLElement>("#ctx-warning");
+const selExamples = $<HTMLSelectElement>("#sel-examples");
 const selNotation = $<HTMLSelectElement>("#sel-notation");
 const selLang    = $<HTMLSelectElement>("#sel-lang");
 const btnSave    = $<HTMLButtonElement>("#btn-save");
 const btnLoad    = $<HTMLButtonElement>("#btn-load");
 const btnDelete  = $<HTMLButtonElement>("#btn-delete");
 const selPatches = $<HTMLSelectElement>("#sel-patches");
-const nowPlaying = $<HTMLOListElement>("#now-playing");
 
 let notation: Notation = (localStorage.getItem("pulso.notation") as Notation) || "anglo";
 selNotation.value = notation;
@@ -68,11 +57,39 @@ selLang.value = getLang();
 
 // ─── i18n ──────────────────────────────────────────────────────
 applyI18n();
-selLang.addEventListener("change", () => setLang(selLang.value as "es" | "en"));
+selLang.addEventListener("change", () => {
+  setLang(selLang.value as "es" | "en");
+  applyI18n();
+});
 selNotation.addEventListener("change", () => {
   notation = selNotation.value as Notation;
   localStorage.setItem("pulso.notation", notation);
-  refreshNowPlaying(0);
+  sequencer.setNotation(notation);
+});
+
+// ─── Examples dropdown ────────────────────────────────────────
+selExamples.innerHTML = "";
+{
+  const opt = document.createElement("option");
+  opt.value = "";
+  opt.textContent = "—";
+  selExamples.appendChild(opt);
+}
+for (const ex of EXAMPLES) {
+  const opt = document.createElement("option");
+  opt.value = ex.id;
+  opt.textContent = ex.name;
+  selExamples.appendChild(opt);
+}
+selExamples.addEventListener("change", () => {
+  const id = selExamples.value;
+  if (!id) return;
+  const ex = EXAMPLES.find((e) => e.id === id);
+  if (!ex) return;
+  editor.setCode(ex.code);
+  runOnce(ex.code);
+  positionCursorOnPattern();
+  selExamples.value = "";
 });
 
 // ─── Editor ─────────────────────────────────────────────────────
@@ -84,7 +101,7 @@ const editor = new Editor(
 editor.setCode(DEFAULT_CODE);
 
 // ─── Grid ──────────────────────────────────────────────────────
-const grid = new Grid(gridEl, gridHint, (newPattern) => {
+const grid = new Grid(gridEl, gridHint, gridLabel, (newPattern) => {
   const ok = editor.replacePatternOnCursorLine(newPattern);
   if (ok) runOnce(editor.getCode());
   return ok;
@@ -94,22 +111,24 @@ const grid = new Grid(gridEl, gridHint, (newPattern) => {
 setPlayHandler((session) => {
   runtime.setSession(session);
   mixer.refresh();
+  sequencer.refresh();
   transport.refreshBpm();
 });
 
 const mixer = new Mixer(mixerEl, runtime);
+const sequencer = new Sequencer(sequencerEl, runtime, notation);
 const visualizer = new Visualizer(waveCanvas, specCanvas);
 const transport = new Transport(
-  btnPlay, btnEval, btnExport, bpmSlider, bpmDisplay, runtime,
+  btnPlay, btnEval, btnExport, btnTap, bpmSlider, bpmDisplay, runtime,
   () => runOnce(editor.getCode()),
 );
 
 visualizer.start();
 
-// ─── Step listener para grid + nowPlaying ──────────────────────
+// ─── Step listener para grid + sequencer ───────────────────────
 runtime.onStep((step) => {
   grid.highlight(step);
-  refreshNowPlaying(step);
+  sequencer.highlight(step);
 });
 
 // ─── Audio context warning ─────────────────────────────────────
@@ -132,7 +151,7 @@ async function refreshPatchList(): Promise<void> {
 }
 
 btnSave.addEventListener("click", async () => {
-  const name = prompt(t("askName"), "untitled");
+  const name = prompt("Nombre del patch:", "untitled");
   if (!name) return;
   const id = name.toLowerCase().replace(/[^a-z0-9_-]+/g, "-");
   await savePatch({ id, name, code: editor.getCode() });
@@ -143,20 +162,20 @@ btnLoad.addEventListener("click", async () => {
   const id = selPatches.value;
   if (!id) return;
   const p = await getPatch(id);
-  if (p) editor.setCode(p.code);
+  if (p) { editor.setCode(p.code); runOnce(p.code); positionCursorOnPattern(); }
 });
 
 btnDelete.addEventListener("click", async () => {
   const id = selPatches.value;
   if (!id) return;
-  if (!confirm(t("confirmDelete"))) return;
+  if (!confirm("¿Borrar este patch?")) return;
   await deletePatch(id);
   await refreshPatchList();
 });
 
 void refreshPatchList();
 
-// ─── Run inicial ───────────────────────────────────────────────
+// ─── Eval & cursor helpers ─────────────────────────────────────
 function runOnce(code: string): void {
   const result = evalUserCode(code);
   if (result.ok) {
@@ -168,36 +187,31 @@ function runOnce(code: string): void {
   }
 }
 
-runOnce(editor.getCode());
-
-// Posicionar el cursor en la primera línea con .pattern(...) para que la grid
-// se vea de inmediato en lugar de mostrar el placeholder.
-{
+function positionCursorOnPattern(): void {
   const lines = editor.getCode().split("\n");
   let pos = 0;
   for (const ln of lines) {
     if (/\.pattern\(/.test(ln)) {
       editorEl.focus();
-      editorEl.selectionStart = editorEl.selectionEnd = pos;
-      // dispara emitCursor manualmente
+      editorEl.selectionStart = editorEl.selectionEnd = pos + ln.indexOf(".pattern");
       editorEl.dispatchEvent(new Event("input"));
-      // y desenfoca para que el usuario no escriba accidentalmente al primer tap
       editorEl.blur();
-      break;
+      return;
     }
     pos += ln.length + 1;
   }
 }
 
-// activar audio en cualquier interacción del usuario (necesario en iOS)
-const wakeAudio = () => {
-  void ensureRunning();
-};
-document.addEventListener("click", wakeAudio, { once: false, capture: true });
-document.addEventListener("keydown", wakeAudio, { once: false, capture: true });
-document.addEventListener("touchstart", wakeAudio, { once: false, capture: true, passive: true });
+runOnce(editor.getCode());
+positionCursorOnPattern();
 
-// Atajo: barra espaciadora = play/stop (sólo si el foco no está en el editor o un input)
+// ─── Activar audio en cualquier interacción del usuario (iOS) ──
+const wakeAudio = () => { void ensureRunning(); };
+document.addEventListener("click", wakeAudio, { capture: true });
+document.addEventListener("keydown", wakeAudio, { capture: true });
+document.addEventListener("touchstart", wakeAudio, { capture: true, passive: true });
+
+// ─── Atajo: barra espaciadora = play/stop ──────────────────────
 document.addEventListener("keydown", (e) => {
   if (e.key !== " " && e.code !== "Space") return;
   const tgt = e.target as HTMLElement;
@@ -205,48 +219,3 @@ document.addEventListener("keydown", (e) => {
   e.preventDefault();
   transport.toggle();
 });
-
-// ─── Now playing ───────────────────────────────────────────────
-function refreshNowPlaying(currentStep: number): void {
-  const session = runtime.getSession();
-  if (!session) {
-    nowPlaying.innerHTML = "";
-    return;
-  }
-  // tomamos las próximas 16 entradas del primer track con notas (o de todos sumadas).
-  const items: Array<{ step: number; label: string }> = [];
-  for (let s = 0; s < 16; s++) {
-    const labels: string[] = [];
-    for (const t0 of session.tracks) {
-      for (const v of t0.voices) {
-        if (v.kind === "drum") {
-          if (v.pattern && v.pattern[s]) labels.push((v.drumKind ?? "drum")[0]!.toUpperCase());
-        } else {
-          let note = -2;
-          if (v.notes && v.notes.length) {
-            if (v.pattern && v.pattern.length) {
-              if (v.pattern[s]) {
-                let idx = 0;
-                for (let i = 0; i < s; i++) if (v.pattern[i]) idx++;
-                note = v.notes[idx % v.notes.length] ?? -2;
-              }
-            } else {
-              note = v.notes[s % v.notes.length] ?? -2;
-            }
-          }
-          if (note >= 0) labels.push(formatNote(note, notation));
-        }
-      }
-    }
-    items.push({ step: s, label: labels.length ? labels.join(" ") : "·" });
-  }
-  nowPlaying.innerHTML = "";
-  for (const it of items) {
-    const li = document.createElement("li");
-    li.textContent = `${it.step + 1}: ${it.label}`;
-    if (it.step === currentStep) li.classList.add("active");
-    nowPlaying.appendChild(li);
-  }
-}
-
-refreshNowPlaying(0);

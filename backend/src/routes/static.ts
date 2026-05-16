@@ -1,15 +1,36 @@
-import { getBundle } from "../lib/bundle.ts";
+import { getBundle, getBundleVersion } from "../lib/bundle.ts";
 
 const FRONTEND_DIR = "frontend";
 
-export async function serveStatic(req: Request, url: URL, dev: boolean): Promise<Response> {
+export async function serveStatic(_req: Request, url: URL, dev: boolean): Promise<Response> {
   const p = url.pathname;
 
   if (p === "/" || p === "/index.html") {
-    return file(`${FRONTEND_DIR}/index.html`, "text/html; charset=utf-8");
+    // Inyecta cache-buster en la URL del bundle: bundle.js → bundle.js?v=<mtime>
+    // Así un cambio de código fuerza al navegador a ir por el bundle nuevo.
+    const f = Bun.file(`${FRONTEND_DIR}/index.html`);
+    if (!(await f.exists())) return new Response("not found", { status: 404 });
+    const html = await f.text();
+    const v = await getBundleVersion();
+    const stamped = html
+      .replace('src="/bundle.js"', `src="/bundle.js?v=${v}"`)
+      .replace('href="/styles.css"', `href="/styles.css?v=${v}"`);
+    return new Response(stamped, {
+      headers: {
+        "content-type": "text/html; charset=utf-8",
+        "cache-control": "no-store",
+      },
+    });
   }
   if (p === "/styles.css") {
-    return file(`${FRONTEND_DIR}/styles.css`, "text/css; charset=utf-8");
+    const f = Bun.file(`${FRONTEND_DIR}/styles.css`);
+    if (!(await f.exists())) return new Response("not found", { status: 404 });
+    return new Response(await f.text(), {
+      headers: {
+        "content-type": "text/css; charset=utf-8",
+        "cache-control": dev ? "no-store" : "public, max-age=86400, immutable",
+      },
+    });
   }
   if (p === "/bundle.js") {
     try {
@@ -17,7 +38,8 @@ export async function serveStatic(req: Request, url: URL, dev: boolean): Promise
       return new Response(code, {
         headers: {
           "content-type": "application/javascript; charset=utf-8",
-          "cache-control": dev ? "no-store" : "public, max-age=60",
+          // immutable porque la URL ya lleva ?v=<mtime>; el navegador puede cachear sin miedo.
+          "cache-control": dev ? "no-store" : "public, max-age=86400, immutable",
         },
       });
     } catch (e) {
@@ -29,10 +51,4 @@ export async function serveStatic(req: Request, url: URL, dev: boolean): Promise
     }
   }
   return new Response("not found", { status: 404 });
-}
-
-async function file(path: string, contentType: string): Promise<Response> {
-  const f = Bun.file(path);
-  if (!(await f.exists())) return new Response("not found", { status: 404 });
-  return new Response(await f.text(), { headers: { "content-type": contentType } });
 }

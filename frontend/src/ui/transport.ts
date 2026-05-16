@@ -10,10 +10,13 @@ export type EvalCb = () => void;
 export class Transport {
   private playing = false;
 
+  private tapTimes: number[] = [];
+
   constructor(
     private readonly btnPlay: HTMLButtonElement,
     private readonly btnEval: HTMLButtonElement,
     private readonly btnExport: HTMLButtonElement,
+    private readonly btnTap: HTMLButtonElement,
     private readonly bpmSlider: HTMLInputElement,
     private readonly bpmDisplay: HTMLElement,
     private readonly runtime: Runtime,
@@ -22,6 +25,7 @@ export class Transport {
     this.btnPlay.addEventListener("click", () => this.toggle());
     this.btnEval.addEventListener("click", () => this.evaluate());
     this.btnExport.addEventListener("click", () => this.exportMidi());
+    this.btnTap.addEventListener("click", () => this.tap());
     this.bpmSlider.addEventListener("input", () => this.onBpmSlide());
   }
 
@@ -65,6 +69,27 @@ export class Transport {
     const bpm = parseInt(this.bpmSlider.value, 10);
     this.bpmDisplay.textContent = String(bpm);
     this.runtime.setBpm(bpm);
+  }
+
+  private tap(): void {
+    const now = performance.now();
+    // descartar taps muy lejanos (>2s) — empezar de cero
+    if (this.tapTimes.length && now - (this.tapTimes.at(-1) ?? 0) > 2000) {
+      this.tapTimes = [];
+    }
+    this.tapTimes.push(now);
+    if (this.tapTimes.length > 6) this.tapTimes.shift();
+    if (this.tapTimes.length < 2) return;
+    const intervals: number[] = [];
+    for (let i = 1; i < this.tapTimes.length; i++) {
+      intervals.push(this.tapTimes[i]! - this.tapTimes[i - 1]!);
+    }
+    const avg = intervals.reduce((a, b) => a + b, 0) / intervals.length;
+    const bpm = Math.round(60000 / avg);
+    const clamped = Math.max(40, Math.min(220, bpm));
+    this.bpmSlider.value = String(clamped);
+    this.bpmDisplay.textContent = String(clamped);
+    this.runtime.setBpm(clamped);
   }
 
   private exportMidi(): void {

@@ -10,22 +10,28 @@
 <body>
   <header class="topbar">
     <h1 class="brand">pulso<span class="dot">.</span></h1>
+
     <div class="controls">
-      <button id="btn-play" class="primary" data-i18n="play">Tocar</button>
+      <button id="btn-play" class="primary big" data-i18n="play">Tocar</button>
       <button id="btn-eval" data-i18n="evaluate">Evaluar</button>
       <span class="bpm">
         <label for="bpm-slider" data-i18n="bpm">BPM</label>
         <input id="bpm-slider" type="range" min="40" max="220" step="1" value="120" />
         <span id="bpm-display">120</span>
+        <button id="btn-tap" class="tap" title="Tap tempo">TAP</button>
       </span>
-      <span id="ctx-warning" class="hidden warn" data-i18n="ctxSuspended">Toca cualquier botón para activar el audio</span>
     </div>
+
     <div class="prefs">
+      <label>
+        <span data-i18n="examples">Ejemplos</span>
+        <select id="sel-examples" aria-label="examples"></select>
+      </label>
       <label>
         <span data-i18n="notation">Notación</span>
         <select id="sel-notation">
-          <option value="anglo">C D E (anglo)</option>
-          <option value="latina">DO RE MI (latina)</option>
+          <option value="anglo">C D E</option>
+          <option value="latina">DO RE MI</option>
         </select>
       </label>
       <label>
@@ -37,12 +43,14 @@
       </label>
       <button id="btn-export-midi" data-i18n="exportMidi">Export MIDI</button>
     </div>
+
+    <span id="ctx-warning" class="hidden warn" data-i18n="ctxSuspended">Toca cualquier botón para activar el audio</span>
   </header>
 
   <main class="layout">
     <section class="editor-pane">
       <div class="editor-toolbar">
-        <span class="hint" data-i18n="hintEval">Ctrl+Enter para evaluar</span>
+        <span class="hint" data-i18n="hintEval">Ctrl+Enter o "Evaluar" · Espacio = play/stop</span>
         <button id="btn-save" data-i18n="save">Guardar</button>
         <select id="sel-patches" aria-label="patches"></select>
         <button id="btn-load" data-i18n="load">Cargar</button>
@@ -50,13 +58,34 @@
       </div>
       <textarea id="editor" spellcheck="false" autocapitalize="off" autocorrect="off"></textarea>
       <pre id="error-panel" class="error hidden"></pre>
+      <details class="cheatsheet">
+        <summary data-i18n="cheatsheet">Cheatsheet del DSL</summary>
+        <div class="cheat-grid">
+          <code>.bpm(120)</code>                      <span>tempo</span>
+          <code>.track('drums')</code>                <span>cambia/crea pista</span>
+          <code>.volume(0.7) .pan(-0.3)</code>        <span>nivel/estéreo de pista</span>
+          <code>.mute() .solo()</code>                <span>silenciar/aislar</span>
+          <code>.drum('kick'|'snare'|'hat'|'clap')</code> <span>nueva voz drum</span>
+          <code>.synth('sine'|'square'|'sawtooth'|'triangle')</code> <span>nueva voz sintética</span>
+          <code>.pattern('x...x...x...x...')</code>   <span>16 steps; x=hit, .=silencio</span>
+          <code>.notes('c4 d#4 sol4 do5')</code>      <span>notas absolutas (anglo+latina)</span>
+          <code>.scale('Cm pent') .notes("1 b3 5 1'")</code> <span>escala + grados</span>
+          <code>.filter(800) .release(0.3)</code>     <span>parámetros del synth</span>
+          <code>.every(2)</code>                      <span>suena 1 de cada N ciclos</span>
+        </div>
+      </details>
     </section>
 
     <aside class="side-pane">
       <section class="card">
-        <h2 data-i18n="grid">Grid del patrón</h2>
+        <h2><span data-i18n="grid">Grid del patrón</span> <span class="grid-target" id="grid-label">—</span></h2>
         <div id="grid" class="grid"></div>
         <p id="grid-hint" class="hint" data-i18n="gridHint">Pon el cursor en una línea con .pattern(...)</p>
+      </section>
+
+      <section class="card">
+        <h2 data-i18n="sequencer">Sequencer (todas las voces)</h2>
+        <div id="sequencer"></div>
       </section>
 
       <section class="card">
@@ -66,13 +95,8 @@
 
       <section class="card">
         <h2 data-i18n="visualizer">Visualizador</h2>
-        <canvas id="waveform" width="560" height="160"></canvas>
-        <canvas id="spectrum" width="560" height="80"></canvas>
-      </section>
-
-      <section class="card">
-        <h2 data-i18n="nowPlaying">Próximas notas</h2>
-        <ol id="now-playing" class="now-playing"></ol>
+        <canvas id="waveform"></canvas>
+        <canvas id="spectrum"></canvas>
       </section>
     </aside>
   </main>
