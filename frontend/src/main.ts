@@ -5,6 +5,7 @@
 import { Runtime } from "./engine/runtime.ts";
 import { setPlayHandler } from "./dsl/builder.ts";
 import { evalUserCode } from "./dsl/eval.ts";
+import { lintCode, type Lint } from "./dsl/lint.ts";
 import { Editor } from "./ui/editor.ts";
 import { Grid } from "./ui/grid.ts";
 import { Mixer } from "./ui/mixer.ts";
@@ -47,7 +48,10 @@ function bootstrap(): void {
   const runtime = new Runtime();
 
   const editorEl   = $<HTMLTextAreaElement>("#editor");
-  const errorPanel = $<HTMLPreElement>("#error-panel");
+  const gutterEl   = $<HTMLElement>("#gutter");
+  const consoleLog = $<HTMLOListElement>("#console-log");
+  const consoleStatus = $<HTMLElement>("#console-status");
+  const btnConsoleClear = $<HTMLButtonElement>("#btn-console-clear");
   const gridEl     = $<HTMLElement>("#grid");
   const gridHint   = $<HTMLElement>("#grid-hint");
   const gridLabel  = $<HTMLElement>("#grid-label");
@@ -84,14 +88,70 @@ function bootstrap(): void {
   // Después conexiones y por último editor.setCode + runOnce.
   // ───────────────────────────────────────────────────────────────
 
+  // Renderiza un mensaje en la consola; click en el item jumpea a la línea.
+  function appendConsole(severity: "error" | "warn" | "ok" | "info", line: number | undefined, msg: string): void {
+    const li = document.createElement("li");
+    li.className = `entry ${severity}`;
+    const icon = severity === "error" ? "🔴" : severity === "warn" ? "🟡" : severity === "ok" ? "✓" : "›";
+    const lineTag = line != null
+      ? `<span class="ln" title="ir a línea ${line}">L${line}</span> `
+      : "";
+    li.innerHTML = `<span class="icon">${icon}</span> ${lineTag}<span class="msg"></span>`;
+    li.querySelector(".msg")!.textContent = msg;
+    if (line != null) li.addEventListener("click", () => editor.jumpToLine(line));
+    consoleLog.appendChild(li);
+    consoleLog.scrollTop = consoleLog.scrollHeight;
+  }
+
+  function clearConsole(): void {
+    consoleLog.innerHTML = "";
+  }
+
+  function setStatus(ok: boolean, errors: number, warns: number): void {
+    if (ok && errors === 0 && warns === 0) {
+      consoleStatus.className = "ok";
+      consoleStatus.textContent = "✓ Sin errores";
+    } else if (errors > 0) {
+      consoleStatus.className = "err";
+      consoleStatus.textContent = `🔴 ${errors} error${errors === 1 ? "" : "es"}` + (warns > 0 ? ` · 🟡 ${warns} advertencia${warns === 1 ? "" : "s"}` : "");
+    } else {
+      consoleStatus.className = "warn";
+      consoleStatus.textContent = `🟡 ${warns} advertencia${warns === 1 ? "" : "s"}`;
+    }
+  }
+
+  btnConsoleClear.addEventListener("click", () => {
+    clearConsole();
+    setStatus(true, 0, 0);
+  });
+
   function runOnce(code: string): void {
+    clearConsole();
+    // 1. linter primero (estático)
+    const lints = lintCode(code);
+    const lintErrors = lints.filter((l) => l.severity === "error");
+    const lintWarns  = lints.filter((l) => l.severity === "warn");
+    for (const l of lints) {
+      appendConsole(l.severity === "warn" ? "warn" : "error", l.line, l.message);
+    }
+    // 2. eval — si hay errores de linter, NO ejecutamos para no romper la sesión
+    if (lintErrors.length > 0) {
+      const errLines = new Set(lints.filter((l) => l.severity === "error").map((l) => l.line));
+      editor.setErrorLines(errLines);
+      setStatus(false, lintErrors.length, lintWarns.length);
+      return;
+    }
     const result = evalUserCode(code);
     if (result.ok) {
-      errorPanel.classList.add("hidden");
-      errorPanel.textContent = "";
+      editor.setErrorLines(new Set());
+      if (lintWarns.length === 0) {
+        appendConsole("ok", undefined, "código evaluado correctamente");
+      }
+      setStatus(true, 0, lintWarns.length);
     } else {
-      errorPanel.classList.remove("hidden");
-      errorPanel.textContent = result.error ?? "error";
+      appendConsole("error", result.line, result.error ?? "error");
+      editor.setErrorLines(result.line != null ? new Set([result.line]) : new Set());
+      setStatus(false, 1, lintWarns.length);
     }
   }
 
@@ -107,7 +167,33 @@ function bootstrap(): void {
     editorEl,
     (code) => runOnce(code),
     (line) => grid.showFromLine(line),
+    gutterEl,
   );
+
+  // Linter en vivo (debounced) — corre sin evaluar; sólo pinta marcas y consola
+  let lintTimer: number | undefined;
+  editor.onInput((code) => {
+    if (lintTimer) clearTimeout(lintTimer);
+    lintTimer = window.setTimeout(() => {
+      const lints = lintCode(code);
+      const errLines = new Set<number>();
+      let errs = 0, warns = 0;
+      // refrescamos sólo si NO acabamos de evaluar (el último log de runOnce gana)
+      // → estrategia simple: pintamos warning/error count en status; gutter siempre actualizado
+      for (const l of lints) {
+        if (l.severity === "error") { errs++; errLines.add(l.line); }
+        else if (l.severity === "warn") warns++;
+      }
+      editor.setErrorLines(errLines);
+      // si la consola está vacía, mostrar el lint en vivo
+      if (consoleLog.children.length === 0) {
+        for (const l of lints) {
+          appendConsole(l.severity === "warn" ? "warn" : "error", l.line, l.message);
+        }
+        setStatus(errs === 0, errs, warns);
+      }
+    }, 250);
+  });
 
   // 3. Mixer/Sequencer/Visualizer/Transport
   const mixer = new Mixer(mixerEl, runtime);

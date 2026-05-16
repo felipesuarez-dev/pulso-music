@@ -101,9 +101,18 @@
         <button id="btn-delete" title="Borra el patch seleccionado"
                 data-i18n="delete">Borrar</button>
       </div>
-      <textarea id="editor" spellcheck="false" autocapitalize="off" autocorrect="off"
-                title="Edita el código TypeScript. Ctrl+Enter para tocar; Tab inserta 2 espacios"></textarea>
-      <pre id="error-panel" class="error hidden"></pre>
+      <div class="editor-wrap">
+        <pre id="gutter" class="gutter" aria-hidden="true"></pre>
+        <textarea id="editor" spellcheck="false" autocapitalize="off" autocorrect="off"
+                  title="Edita el código TypeScript. Ctrl+Enter para tocar; Tab inserta 2 espacios"></textarea>
+      </div>
+      <div id="console" class="console">
+        <div class="console-header">
+          <span id="console-status" class="ok">✓ Sin errores</span>
+          <button id="btn-console-clear" class="mini" title="Limpia mensajes manualmente">limpiar</button>
+        </div>
+        <ol id="console-log" class="console-log" aria-live="polite"></ol>
+      </div>
       <details class="cheatsheet" open>
         <summary data-i18n="cheatsheet">Cheatsheet del DSL — pasa el mouse sobre cualquier elemento para más info</summary>
 
