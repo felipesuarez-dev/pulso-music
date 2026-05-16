@@ -18,10 +18,29 @@ export class Runtime {
   private listeners = new Set<StepListener>();
   readonly metronome = new Metronome();
 
+  private songLen = Infinity;
+
   setSession(session: SessionDef): void {
     this.session = session;
     this.scheduler.setBpm(session.bpm);
     this.syncBuses();
+    this.computeSongLength();
+  }
+
+  private computeSongLength(): void {
+    if (!this.session) { this.songLen = Infinity; return; }
+    if (this.session.songLength) {
+      this.songLen = this.session.songLength;
+      return;
+    }
+    // Auto: si alguna voz usa .during, la canción dura hasta el último end + 1
+    let max = 0;
+    for (const t of this.session.tracks) {
+      for (const v of t.voices) {
+        if (v.during && v.during[1] + 1 > max) max = v.during[1] + 1;
+      }
+    }
+    this.songLen = max > 0 ? max : Infinity;
   }
 
   setBpm(bpm: number): void {
@@ -125,13 +144,17 @@ export class Runtime {
     // metrónomo primero — suena aunque no haya pistas
     this.metronome.tick(time, step);
     if (!this.session) return;
+    // Si hay songLength, el contador se envuelve para que la canción loopee.
+    const effCycle = Number.isFinite(this.songLen) ? cycle % this.songLen : cycle;
     for (const t of this.session.tracks) {
       const bus = this.buses.get(t.name);
       if (!bus) continue;
       for (const v of t.voices) {
-        if (!shouldPlayCycle(v, cycle)) continue;
+        // Voces con .during() sólo suenan dentro de su rango de ciclos
+        if (v.during && (effCycle < v.during[0] || effCycle > v.during[1])) continue;
+        if (!shouldPlayCycle(v, effCycle)) continue;
         if (v.kind === "drum") {
-          if (v.pattern && v.pattern[step]) {
+          if (v.pattern && v.pattern[step % v.pattern.length]) {
             makeDrum(v.drumKind ?? "kick").trigger({ when: time, destination: bus.input });
           }
         } else {
@@ -144,6 +167,9 @@ export class Runtime {
     }
     this.listeners.forEach((l) => l(step, cycle));
   }
+
+  // Para que el sequencer / UI sepa el "tamaño" del loop
+  getSongLength(): number { return this.songLen; }
 }
 
 const STEPS_PER_CYCLE = 16;

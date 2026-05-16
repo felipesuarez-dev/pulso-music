@@ -24,6 +24,7 @@ export interface VoiceDef {
   scaleRoot?: number;    // pitch class (0..11) de la tónica
   scaleOctave?: number;  // octava base para grados (default 4)
   rawNotes?: string;     // texto original (para debug y export MIDI)
+  during?: [number, number]; // rango de ciclos [inicio, fin] (ambos inclusive)
 }
 
 export interface TrackDef {
@@ -38,6 +39,7 @@ export interface TrackDef {
 export interface SessionDef {
   bpm: number;
   tracks: TrackDef[];
+  songLength?: number;  // si se define, el contador de ciclos se envuelve mod N
 }
 
 export type Notation = "anglo" | "latina";

@@ -241,6 +241,16 @@
       </section>
 
       <section class="cheat-section">
+        <h3>🎶 Estructura de canción (NUEVO)</h3>
+        <div class="cheat-grid">
+          <code title="Esta voz sólo suena durante los ciclos start..end (inclusive). Usado para hacer secciones: intro, verso, coro, etc.">.during(0, 3)</code>
+          <span>Voz suena ciclos [0..3].</span>
+          <code title="Largo total de la canción en ciclos. El contador se envuelve modulo N, así la canción loopea. Si no llamas .songLength, Pulso lo deduce de los .during() declarados.">.songLength(16)</code>
+          <span>Loop cada N ciclos.</span>
+        </div>
+      </section>
+
+      <section class="cheat-section">
         <h3>⚙️ Modificadores synth</h3>
         <div class="cheat-grid">
           <code title="Cutoff del lowpass en Hz. Bajo=oscuro, alto=brillante. Default 8000.">.filter(800)</code>

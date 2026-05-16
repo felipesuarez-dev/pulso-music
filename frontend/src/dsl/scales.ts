@@ -145,9 +145,15 @@ export function resolveDegrees(input: string, ref: ScaleRef, octave = 4): number
   return out;
 }
 
-// Heurística: ¿el primer token parece grado o nota absoluta?
+// Heurística: ¿el string parece grados o notas absolutas?
+// Recorre tokens saltando rests/sustains hasta encontrar uno con contenido real,
+// y mira si parece grado. Esto evita el bug donde una pista que arranca con
+// silencios (". . 5' 1''") era tratada como notas absolutas y crasheaba.
 export function looksLikeDegrees(input: string): boolean {
-  const first = input.trim().split(/\s+/)[0] ?? "";
-  if (first === "_" || first === "." || first === "~") return false;
-  return /^[b#]{0,2}\d/.test(first);
+  const tokens = input.trim().split(/\s+/);
+  for (const t of tokens) {
+    if (t === "_" || t === "." || t === "~") continue;
+    return /^[b#]{0,2}\d/.test(t);
+  }
+  return false;
 }

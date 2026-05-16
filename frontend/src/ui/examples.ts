@@ -333,6 +333,81 @@ pulso()
 `,
   },
   {
+    id: "song-structure",
+    name: "🎶 Canción completa — intro · verso · coro · break (16 ciclos)",
+    code:
+`// Canción con ESTRUCTURA real usando .during(start, end) por voz.
+// 16 ciclos totales en DO menor, ~32 seg a 120 BPM:
+//   ciclos  0–3:  INTRO  (sólo hat + pad respirando)
+//   ciclos  4–7:  VERSO  (drums + bajo + lead suave)
+//   ciclos  8–11: BREAK  (sólo bajo + clap esporádico — tensión)
+//   ciclos 12–15: CORO   (todo el kit + lead pleno + strings)
+pulso()
+  .bpm(120)
+  .songLength(16)
+
+  // ─── INTRO 0–3 ────────────────────────────────────────────
+  .track('intro-hat').volume(0.45)
+    .drum('hat').pattern('x.x.x.x.x.x.x.x.').during(0, 3)
+  .track('intro-pad').volume(0.55)
+    .synth('sine')
+      .scale('Cm')
+      .notes('1 _ _ _ b6 _ _ _ b3 _ _ _ 5 _ _ _')
+      .filter(1300).attack(0.5).release(1.4).during(0, 3)
+
+  // ─── VERSO 4–7 ────────────────────────────────────────────
+  .track('verso-drums')
+    .drum('kick').pattern('x...x...x...x...').during(4, 7)
+    .drum('snare').pattern('....x.......x...').during(4, 7).volume(0.5)
+    .drum('hat').pattern('..x...x...x...x.').during(4, 7).volume(0.45)
+  .track('verso-bajo').volume(0.85)
+    .synth('sawtooth')
+      .scale('Cm')
+      .notes('1 1 5 1 b7 5 b3 5')
+      .filter(420).release(0.2).octave(2).during(4, 7)
+  .track('verso-lead').pan(0.3).volume(0.6)
+    .synth('triangle')
+      .scale('Cm')
+      .notes("5 . b3 . 5 . 4 . b3 . 1 . 4 . 5 .")
+      .filter(2400).release(0.3).during(4, 7)
+
+  // ─── BREAK 8–11 (silencio dramático) ──────────────────────
+  .track('break-bajo').volume(0.7)
+    .synth('sine')
+      .scale('Cm')
+      .notes('1 _ _ _ _ _ _ _ b6 _ _ _ _ _ _ _')
+      .filter(280).release(0.8).octave(2).during(8, 11)
+  .track('break-clap').volume(0.6)
+    .drum('clap').pattern('............x...').during(8, 11)
+  .track('break-rim').volume(0.5)
+    .drum('rim').pattern('x...x...x...x...').during(8, 11)
+
+  // ─── CORO 12–15 (todo a tope) ─────────────────────────────
+  .track('coro-drums')
+    .drum('kick').pattern('x...x...x...x...').during(12, 15)
+    .drum('snare').pattern('....x.......x...').during(12, 15)
+    .drum('hat').pattern('xxxxxxxxxxxxxxxx').during(12, 15).volume(0.45)
+    .drum('clap').pattern('....x.......x...').during(12, 15).volume(0.55)
+    .drum('ride').pattern('x.......x.......').during(12, 15).volume(0.4)
+  .track('coro-bajo').volume(0.95)
+    .synth('sawtooth')
+      .scale('Cm')
+      .notes('1 1 1 1 b6 b6 b6 b6 b7 b7 b7 b7 5 5 5 5')
+      .filter(500).release(0.18).octave(2).during(12, 15)
+  .track('coro-lead').pan(0.4).volume(0.7)
+    .synth('square')
+      .scale('Cm')
+      .notes("1' b3' 5' 4' b3' 1' b7 5 1' b3' 5' 1'' b7' 5' 4' b3'")
+      .filter(2800).release(0.2).during(12, 15)
+  .track('coro-strings').pan(-0.4).volume(0.65)
+    .synth('sine')
+      .scale('Cm')
+      .notes('1 _ _ _ b6 _ _ _ b7 _ _ _ 5 _ _ _')
+      .filter(1700).attack(0.2).release(1.5).during(12, 15)
+  .play();
+`,
+  },
+  {
     id: "cinematic-epic",
     name: "🎬 Cinematic épico (8 pistas, todos los drums)",
     code:

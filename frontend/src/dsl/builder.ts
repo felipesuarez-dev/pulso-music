@@ -121,6 +121,22 @@ class PulsoBuilder {
   every(n: number): this   { this.requireVoice().every = Math.max(1, Math.floor(n)); return this; }
   wave(w: Wave): this      { this.requireVoice().wave = w; return this; }
 
+  // Estructura de canción: la voz sólo suena en los ciclos [start..end] (inclusive).
+  // Combinada con .songLength(N) hace intro/verse/chorus posibles.
+  during(start: number, end: number): this {
+    const s = Math.max(0, Math.floor(start));
+    const e = Math.max(s, Math.floor(end));
+    this.requireVoice().during = [s, e];
+    return this;
+  }
+
+  // Largo de la canción en ciclos. El contador wrappea modulo N (así loopea).
+  // Si no se llama, Pulso lo deduce de los .during() declarados.
+  songLength(n: number): this {
+    this.session.songLength = Math.max(1, Math.floor(n));
+    return this;
+  }
+
   play(): SessionDef {
     if (this.session.tracks.length === 0) {
       // pista por defecto si no se llamó .track() pero hay voces flotantes (no debería pasar con la API correcta)
