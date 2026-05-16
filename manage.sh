@@ -1,11 +1,14 @@
 #!/usr/bin/env bash
 # manage.sh — entrypoint de scripts de Pulso
 # Uso: ./manage.sh <subcomando>
-#   start       arranca el servidor
-#   dev         arranca el servidor con --hot reload
+#   start       arranca el servidor (foreground; Ctrl+C para parar)
+#   bg          arranca en background (logs en pulso.log, PID en pulso.pid)
+#   stop        para el servidor en background
+#   status      muestra si está corriendo y en qué puerto
+#   dev         arranca el servidor con --hot reload (foreground)
 #   build       genera bundle del frontend a disco
 #   push-gitea  crea repo en Gitea + push
-#   push-github crea repo en GitHub + push
+#   push-github push a GitHub vía SSH (token sólo si quieres CREAR el repo)
 #   push-all    ambos remotes
 
 set -euo pipefail
@@ -26,6 +29,45 @@ cmd="${1:-help}"
 case "$cmd" in
   start)
     bun run backend/src/server.ts
+    ;;
+
+  bg)
+    if [[ -f pulso.pid ]] && kill -0 "$(cat pulso.pid)" 2>/dev/null; then
+      echo "ya corriendo (PID $(cat pulso.pid)). usa './manage.sh stop' primero o './manage.sh status'."
+      exit 1
+    fi
+    nohup bun run backend/src/server.ts >pulso.log 2>&1 &
+    echo $! >pulso.pid
+    sleep 0.6
+    if kill -0 "$(cat pulso.pid)" 2>/dev/null; then
+      echo "✓ pulso corriendo en background (PID $(cat pulso.pid)). logs: tail -f pulso.log"
+      grep -m1 listening pulso.log 2>/dev/null || true
+    else
+      echo "✗ falló al arrancar. revisa pulso.log:"
+      tail -10 pulso.log
+      rm -f pulso.pid
+      exit 1
+    fi
+    ;;
+
+  stop)
+    if [[ -f pulso.pid ]] && kill -0 "$(cat pulso.pid)" 2>/dev/null; then
+      kill "$(cat pulso.pid)" && echo "✓ stopped PID $(cat pulso.pid)"
+      rm -f pulso.pid
+    else
+      echo "no estaba corriendo"
+      rm -f pulso.pid
+    fi
+    ;;
+
+  status)
+    if [[ -f pulso.pid ]] && kill -0 "$(cat pulso.pid)" 2>/dev/null; then
+      pid="$(cat pulso.pid)"
+      port="$(ss -tlnp 2>/dev/null | awk -v p="$pid" '$0 ~ "pid="p {print $4}' | head -1 | sed 's/.*://')"
+      echo "✓ corriendo: PID $pid, puerto ${port:-?}"
+    else
+      echo "✗ no está corriendo"
+    fi
     ;;
 
   dev)
