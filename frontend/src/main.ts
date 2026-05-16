@@ -14,6 +14,7 @@ import { Transport } from "./ui/transport.ts";
 import { applyI18n, getLang, setLang } from "./ui/i18n.ts";
 import { listPatches, getPatch, savePatch, deletePatch } from "./ui/patches.ts";
 import { ensureRunning, isSuspended, onStateChange } from "./engine/context.ts";
+import { setMasterVolume } from "./engine/master.ts";
 import { EXAMPLES } from "./ui/examples.ts";
 import type { Notation } from "./types.ts";
 
@@ -58,8 +59,11 @@ function bootstrap(): void {
   const btnEval    = $<HTMLButtonElement>("#btn-eval");
   const btnExport  = $<HTMLButtonElement>("#btn-export-midi");
   const btnTap     = $<HTMLButtonElement>("#btn-tap");
+  const btnMetronome = $<HTMLButtonElement>("#btn-metronome");
   const bpmSlider  = $<HTMLInputElement>("#bpm-slider");
   const bpmDisplay = $<HTMLElement>("#bpm-display");
+  const volSlider  = $<HTMLInputElement>("#vol-slider");
+  const volDisplay = $<HTMLElement>("#vol-display");
   const ctxWarn    = $<HTMLElement>("#ctx-warning");
   const stepText   = $<HTMLElement>("#step-text");
   const stepIndicator = $<HTMLElement>("#step-indicator");
@@ -166,6 +170,37 @@ function bootstrap(): void {
     runOnce(ex.code);
     positionCursorOnPattern();
     selExamples.value = "";
+  });
+
+  // Master volume — persiste en localStorage
+  {
+    const stored = parseFloat(localStorage.getItem("pulso.masterVolume") ?? "0.85");
+    const initial = isNaN(stored) ? 0.85 : Math.max(0, Math.min(1.5, stored));
+    setMasterVolume(initial);
+    volSlider.value = String(Math.round(initial * 100));
+    volDisplay.textContent = `${Math.round(initial * 100)}%`;
+  }
+  volSlider.addEventListener("input", () => {
+    const pct = parseInt(volSlider.value, 10);
+    const v = pct / 100;
+    setMasterVolume(v);
+    volDisplay.textContent = `${pct}%`;
+    localStorage.setItem("pulso.masterVolume", String(v));
+  });
+
+  // Metrónomo
+  {
+    const stored = localStorage.getItem("pulso.metronome") === "1";
+    runtime.metronome.setEnabled(stored);
+    btnMetronome.classList.toggle("on", stored);
+    btnMetronome.setAttribute("aria-pressed", String(stored));
+  }
+  btnMetronome.addEventListener("click", () => {
+    const next = !runtime.metronome.isEnabled();
+    runtime.metronome.setEnabled(next);
+    btnMetronome.classList.toggle("on", next);
+    btnMetronome.setAttribute("aria-pressed", String(next));
+    localStorage.setItem("pulso.metronome", next ? "1" : "0");
   });
 
   // Audio context warning

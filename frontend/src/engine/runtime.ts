@@ -7,6 +7,7 @@ import { TrackBus } from "./track.ts";
 import { makeDrum } from "./drum.ts";
 import { makeSynth } from "./synth.ts";
 import { shouldPlayCycle } from "./voice.ts";
+import { Metronome } from "./metronome.ts";
 
 export type StepListener = (step: number, cycle: number) => void;
 
@@ -15,6 +16,7 @@ export class Runtime {
   private buses = new Map<string, TrackBus>();
   private session: SessionDef | null = null;
   private listeners = new Set<StepListener>();
+  readonly metronome = new Metronome();
 
   setSession(session: SessionDef): void {
     this.session = session;
@@ -120,6 +122,8 @@ export class Runtime {
   }
 
   private onTick(time: number, step: number, cycle: number): void {
+    // metrónomo primero — suena aunque no haya pistas
+    this.metronome.tick(time, step);
     if (!this.session) return;
     for (const t of this.session.tracks) {
       const bus = this.buses.get(t.name);

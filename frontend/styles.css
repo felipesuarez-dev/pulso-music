@@ -81,6 +81,41 @@ body {
   border-radius: 8px;
 }
 .section.transport-section { border-color: var(--accent); }
+
+/* Metrónomo toggle: igual estilo que mute/solo del mixer */
+.section .toggle {
+  padding: 6px 10px;
+  font-size: 12px;
+  min-height: 36px;
+}
+.section .toggle.on {
+  background: var(--accent-4);
+  color: #062810;
+  border-color: var(--accent-4);
+  animation: tick 0.5s ease-in-out infinite;
+}
+@keyframes tick {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(126, 231, 135, 0.5); }
+  50%      { box-shadow: 0 0 0 6px rgba(126, 231, 135, 0); }
+}
+
+/* Sección volumen: idéntico styling a tempo-section */
+.section.volume-section input[type="range"] {
+  width: 100px;
+  height: 28px;
+  accent-color: var(--accent-4);
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  border: none;
+}
+.section.volume-section label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-dim);
+  font-size: 12px;
+}
 .section.tempo-section .bpm-num { color: var(--text); font-weight: 700; min-width: 28px; text-align: right; font-family: var(--mono); }
 .section.tempo-section label {
   display: inline-flex;
@@ -474,6 +509,8 @@ button.flash {
   }
   .section.tempo-section { width: 100%; justify-content: space-between; }
   .section.tempo-section input[type="range"] { flex: 1; min-width: 80px; width: auto; }
+  .section.volume-section { width: 100%; justify-content: space-between; }
+  .section.volume-section input[type="range"] { flex: 1; min-width: 80px; width: auto; }
 
   .prefs-section { margin-left: 0; width: 100%; }
   .prefs-section label { font-size: 11px; flex: 1 1 130px; min-width: 110px; }

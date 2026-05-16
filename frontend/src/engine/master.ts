@@ -23,3 +23,12 @@ export function getMaster(): MasterBus {
   bus = { input: gain, analyser, gain };
   return bus;
 }
+
+export function setMasterVolume(v: number): void {
+  const m = getMaster();
+  m.gain.gain.value = Math.max(0, Math.min(1.5, v));
+}
+
+export function getMasterVolume(): number {
+  return getMaster().gain.gain.value;
+}

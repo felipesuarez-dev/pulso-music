@@ -29,6 +29,10 @@
       <button id="btn-eval"
               title="Re-evaluar el código del editor sin parar la música (atajo: Ctrl+Enter)"
               data-i18n="evaluate">Evaluar</button>
+      <button id="btn-metronome" class="toggle"
+              title="Metrónomo: click en cada beat (acento en el downbeat). Útil para ensayar el tempo."
+              aria-pressed="false"
+              data-i18n="metronome">Metrónomo</button>
       <span class="step-indicator" id="step-indicator" title="Paso actual del ciclo">
         <span class="dot"></span>
         <span id="step-text">listo</span>
@@ -44,6 +48,15 @@
              title="Arrastra para cambiar el tempo en vivo" />
       <button id="btn-tap" class="tap"
               title="Toca al ritmo (4+ veces) para fijar el BPM por pulsación">TAP</button>
+    </div>
+
+    <div class="section volume-section" role="group" aria-label="Volume">
+      <label for="vol-slider" title="Volumen general de salida (0-100%)">
+        <span data-i18n="volume">Vol</span>
+        <span id="vol-display" class="bpm-num">85%</span>
+      </label>
+      <input id="vol-slider" type="range" min="0" max="100" step="1" value="85"
+             title="Arrastra para ajustar el volumen general" />
     </div>
 
     <div class="section prefs-section">
