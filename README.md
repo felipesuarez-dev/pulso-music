@@ -167,24 +167,41 @@ Para auto-update tras publicar la imagen a un registry (Gitea / Docker Hub / GHC
 
 ## Architecture
 
-```
-┌──────────────────────────────────────────────────────────────┐
-│                  Browser (cualquier dispositivo)             │
-│   frontend/src/                                              │
-│   ├── ui/         editor + grid + mixer + scope + drawer     │
-│   ├── dsl/        parser + lexer del API encadenable         │
-│   └── engine/     Web Audio: osc, drums, presets, ADSR, mix  │
-└────────────────┬─────────────────────────────┬───────────────┘
-                 │ HTTP (REST + bundle)        │ WS /ws (live-sync)
-┌────────────────▼─────────────────────────────▼───────────────┐
-│                  Bun.serve (backend/)                        │
-│   routes/static.ts   → /, /bundle.js, /styles.css, /favicon  │
-│   routes/patches.ts  → /api/patches (CRUD a JSON files)      │
-│   routes/ws.ts       → broadcast de cambios entre clientes   │
-│   lib/bundle.ts      → Bun.build cacheado por mtime de .ts   │
-│   lib/env.ts         → PORT / HOST / DATA_DIR tipados        │
-│   storage/patches.ts → ./data/patches/*.json                 │
-└──────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TB
+    subgraph Browser["🌐 Browser (cualquier dispositivo LAN)"]
+        direction LR
+        UI["ui/<br/>editor · grid · mixer · scope · drawer DSL"]
+        DSL["dsl/<br/>parser + lexer del API encadenable"]
+        Engine["engine/<br/>Web Audio: osc · drums · presets · ADSR · mix"]
+        UI --> DSL --> Engine
+    end
+
+    subgraph Backend["⚡ Bun.serve (backend/)"]
+        direction LR
+        Static["routes/static.ts<br/>/, /bundle.js, /styles.css, /favicon"]
+        Patches["routes/patches.ts<br/>/api/patches CRUD"]
+        WS["routes/ws.ts<br/>/ws live-sync"]
+        Bundle["lib/bundle.ts<br/>Bun.build cacheado por mtime"]
+        Env["lib/env.ts<br/>PORT · HOST · DATA_DIR"]
+        Storage["storage/patches.ts<br/>JSON files"]
+        Static -.-> Bundle
+        Patches --> Storage
+    end
+
+    Disk[("📁 data/patches/<br/>*.json")]
+
+    Browser -- "HTTP (REST + bundle)" --> Static
+    Browser -- "HTTP (REST + bundle)" --> Patches
+    Browser <-- "WebSocket /ws<br/>live-sync entre clientes" --> WS
+    Storage --> Disk
+
+    classDef browser fill:#1a1f2e,stroke:#ff8c00,stroke-width:2px,color:#fff
+    classDef backend fill:#0d1117,stroke:#fbf0df,stroke-width:2px,color:#fff
+    classDef disk fill:#2d1b00,stroke:#ff8c00,stroke-width:1px,color:#fff
+    class Browser browser
+    class Backend backend
+    class Disk disk
 ```
 
 Reglas: el frontend nunca toca disco directamente — pasa por REST. El backend nunca importa nada que no sea Bun stdlib + `node:fs/promises` / `node:path` (built-in de Bun). El bundle del frontend se genera **on-the-fly** en el primer request y se cachea por mtime máximo de cualquier `.ts` bajo `frontend/src/` (cualquier edición invalida el cache, no sólo `main.ts`). El HTML inyecta `?v=<mtime>` en cada `<script>` y `<link>` para cache-bust agresivo del navegador.
@@ -206,6 +223,7 @@ Reglas: el frontend nunca toca disco directamente — pasa por REST. El backend 
 ```
 pulso/
 ├── backend/                      Bun.serve + REST + WebSocket + bundler
+│   ├── CLAUDE.md                 reglas locales del backend (mapa de módulos)
 │   ├── bun.d.ts                  tipos manuales del global Bun (sin bun-types)
 │   ├── tsconfig.json
 │   └── src/
@@ -219,9 +237,11 @@ pulso/
 │           ├── env.ts            PORT / HOST / DATA_DIR tipados
 │           └── bundle.ts         Bun.build cacheado por mtime máximo
 ├── frontend/                     HTML + TS + CSS, motor Web Audio
+│   ├── CLAUDE.md                 reglas locales del frontend (mapa de módulos)
 │   ├── index.html
 │   ├── styles.css
-│   ├── favicon.svg               onda de pulso naranja
+│   ├── tsconfig.json
+│   ├── favicon.svg               onda de pulso naranja (también logo del README)
 │   ├── cursor-text.svg           I-beam custom para fondo oscuro
 │   └── src/
 │       ├── main.ts               bootstrap del editor
@@ -238,14 +258,18 @@ pulso/
 │   ├── 06-notation-and-scales.md
 │   └── 07-tracks-and-midi-export.md
 ├── data/                         patches guardados (gitignored)
+├── .github/
+│   └── workflows/
+│       └── release.yml           build estático + imagen Docker → GH Release draft
 ├── Dockerfile                    oven/bun:1.3.10-alpine, user bun (uid 1000)
 ├── .dockerignore
-├── manage.sh                     entrypoint dev/bg/build/push
-├── CLAUDE.md                     convenciones del proyecto
+├── tsconfig.base.json            tsconfig raíz compartido por backend y frontend
+├── manage.sh                     entrypoint dev/bg/build/push (bare-metal en 4040)
+├── CLAUDE.md                     convenciones globales del proyecto
 └── README.md
 ```
 
-Cada subcarpeta `backend/` y `frontend/` tiene su propio `CLAUDE.md` con reglas locales y mapa de módulos.
+Los tres `CLAUDE.md` (root, `backend/`, `frontend/`) se cargan automáticamente cuando alguien trabaja en el directorio correspondiente y contienen reglas duras + mapa de módulos para que cualquier colaborador (humano o LLM) tenga el contexto antes de editar.
 
 ## Requirements
 

@@ -1,0 +1,259 @@
+name: Release Build
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag a publicar (ej: v1.0.0.20260516). Si se deja vacío, usa el ref actual.'
+        required: false
+
+permissions:
+  contents: write
+  packages: write
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+  BUN_VERSION: 1.3.10
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      body: ${{ steps.notes.outputs.body }}
+      version: ${{ steps.version.outputs.version }}
+      tag: ${{ steps.version.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Resolve tag and version
+        id: version
+        env:
+          REF_NAME: ${{ github.ref_name }}
+          INPUT_TAG: ${{ github.event.inputs.tag }}
+        run: |
+          if [ -n "$INPUT_TAG" ]; then
+            TAG="$INPUT_TAG"
+          else
+            TAG="$REF_NAME"
+          fi
+          VERSION="${TAG#v}"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Resolved tag: $TAG"
+          echo "Resolved version: $VERSION"
+
+      - name: Generate release body from git log
+        id: notes
+        env:
+          TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          PREV_TAG=$(git for-each-ref --sort=-creatordate --format='%(refname:short)' refs/tags \
+            | grep -E '^v[0-9]' | grep -v "^${TAG}$" | head -1 || true)
+          if [ -n "$PREV_TAG" ]; then
+            RANGE="${PREV_TAG}..${TAG}"
+          else
+            RANGE="$TAG"
+          fi
+          echo "Range: $RANGE"
+
+          clean_subject() {
+            local s="$1"
+            s=$(echo "$s" | sed -E 's/^\[[^]]+\][[:space:]]*//')
+            local first rest
+            first=$(printf '%s' "${s:0:1}" | tr '[:lower:]' '[:upper:]')
+            rest="${s:1}"
+            printf '%s%s' "$first" "$rest"
+          }
+
+          FEATS=""
+          FIXES=""
+          DOCS=""
+          OTHER=""
+          while IFS= read -r line; do
+            [ -z "$line" ] && continue
+            case "$line" in
+              \[release\]*|\[ci\]*) continue ;;
+            esac
+            cleaned=$(clean_subject "$line")
+            if echo "$line" | grep -iqE '^\[fix'; then
+              FIXES="${FIXES}- ${cleaned}"$'\n'
+            elif echo "$line" | grep -iqE '^\[feat'; then
+              FEATS="${FEATS}- ${cleaned}"$'\n'
+            elif echo "$line" | grep -iqE '^\[docs'; then
+              DOCS="${DOCS}- ${cleaned}"$'\n'
+            elif echo "$line" | grep -iqE '\bfix(es|ed)?\b|\bbug\b|\bhotfix\b'; then
+              FIXES="${FIXES}- ${cleaned}"$'\n'
+            else
+              OTHER="${OTHER}- ${cleaned}"$'\n'
+            fi
+          done < <(git log --pretty='%s' "$RANGE" 2>/dev/null || git log --pretty='%s')
+
+          BODY=""
+          if [ -n "$FEATS" ]; then
+            BODY="${BODY}## Features"$'\n\n'"${FEATS}"$'\n'
+          fi
+          if [ -n "$FIXES" ]; then
+            BODY="${BODY}## Fixes"$'\n\n'"${FIXES}"$'\n'
+          fi
+          if [ -n "$DOCS" ]; then
+            BODY="${BODY}## Docs"$'\n\n'"${DOCS}"$'\n'
+          fi
+          if [ -n "$OTHER" ]; then
+            BODY="${BODY}## Other"$'\n\n'"${OTHER}"$'\n'
+          fi
+          if [ -z "$BODY" ]; then
+            BODY="## Changes"$'\n\n'"- ${TAG} release"$'\n'
+          fi
+
+          # Sección fija con instrucciones de uso de los assets.
+          BODY="${BODY}"$'\n'"## Assets"$'\n\n'"- \`pulso-frontend-${TAG#v}.zip\` — bundle estático del frontend (\`index.html\` + \`bundle.js\` + \`styles.css\` + \`favicon.svg\` + \`cursor-text.svg\`). Servible desde cualquier static host (Vercel, Netlify, S3). **No incluye el backend** — sin patches persistentes ni live-sync."$'\n'"- \`pulso-source-${TAG#v}.tar.gz\` — código fuente completo para correr local con Bun (\`./manage.sh dev\` o \`./manage.sh start\`)."$'\n'"- \`ghcr.io/${{ github.repository }}:${TAG#v}\` / \`:latest\` — imagen Docker multi-arch (amd64 + arm64) lista para \`docker run\` o el \`docker-compose.yml\` del README."$'\n'
+
+          DELIM="EOF_$(openssl rand -hex 8)"
+          {
+            echo "body<<${DELIM}"
+            printf '%s' "$BODY"
+            echo
+            echo "${DELIM}"
+          } >> "$GITHUB_OUTPUT"
+
+          echo "----- generated body -----"
+          printf '%s' "$BODY"
+          echo "--------------------------"
+
+  bundle:
+    runs-on: ubuntu-latest
+    needs: prepare
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Bun ${{ env.BUN_VERSION }}
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+
+      - name: Build frontend bundle (minified ESM)
+        run: |
+          mkdir -p dist
+          bun build frontend/src/main.ts \
+            --outfile dist/bundle.js \
+            --target browser \
+            --format esm \
+            --minify
+
+      - name: Stage static assets into dist/
+        run: |
+          cp frontend/index.html dist/
+          cp frontend/styles.css dist/
+          cp frontend/favicon.svg dist/
+          cp frontend/cursor-text.svg dist/
+          ls -la dist/
+
+      - name: Create static bundle zip
+        run: |
+          cd dist
+          zip -9 -r "../pulso-frontend-${{ needs.prepare.outputs.version }}.zip" .
+          cd ..
+          ls -lh "pulso-frontend-${{ needs.prepare.outputs.version }}.zip"
+
+      - name: Create source tarball (runnable con Bun)
+        run: |
+          tar -czf "pulso-source-${{ needs.prepare.outputs.version }}.tar.gz" \
+            --exclude='.git' \
+            --exclude='.github' \
+            --exclude='data' \
+            --exclude='dist' \
+            --exclude='.claude' \
+            --exclude='pulso.log' \
+            --exclude='pulso.pid' \
+            --exclude='*.tar.gz' \
+            --exclude='*.zip' \
+            backend frontend docs Dockerfile .dockerignore \
+            manage.sh tsconfig.base.json CLAUDE.md README.md
+          ls -lh "pulso-source-${{ needs.prepare.outputs.version }}.tar.gz"
+
+      - name: Upload bundle artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: bundle-artifacts
+          path: |
+            pulso-frontend-${{ needs.prepare.outputs.version }}.zip
+            pulso-source-${{ needs.prepare.outputs.version }}.tar.gz
+          retention-days: 7
+          if-no-files-found: error
+
+  docker:
+    runs-on: ubuntu-latest
+    needs: prepare
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Lowercase image name
+        id: img
+        run: echo "name=$(echo '${{ env.IMAGE_NAME }}' | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_OUTPUT"
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push multi-arch image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ steps.img.outputs.name }}:${{ needs.prepare.outputs.version }}
+            ${{ env.REGISTRY }}/${{ steps.img.outputs.name }}:latest
+          labels: |
+            org.opencontainers.image.title=Pulso
+            org.opencontainers.image.description=Entorno de live coding musical (TypeScript + Web Audio)
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.version=${{ needs.prepare.outputs.version }}
+            org.opencontainers.image.licenses=MIT
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  release:
+    runs-on: ubuntu-latest
+    needs: [prepare, bundle, docker]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download bundle artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: bundle-artifacts
+          path: ./release-assets
+
+      - name: List assets
+        run: ls -lh ./release-assets/
+
+      - name: Create draft release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.prepare.outputs.tag }}
+          name: Pulso ${{ needs.prepare.outputs.tag }}
+          body: ${{ needs.prepare.outputs.body }}
+          draft: true
+          prerelease: false
+          files: |
+            release-assets/pulso-frontend-${{ needs.prepare.outputs.version }}.zip
+            release-assets/pulso-source-${{ needs.prepare.outputs.version }}.tar.gz
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
