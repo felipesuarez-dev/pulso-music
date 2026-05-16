@@ -92,11 +92,12 @@ body {
   background: var(--accent-4);
   color: #062810;
   border-color: var(--accent-4);
-  animation: tick 0.5s ease-in-out infinite;
+  animation: tick-opacity 0.5s ease-in-out infinite;
+  will-change: opacity;
 }
-@keyframes tick {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(126, 231, 135, 0.5); }
-  50%      { box-shadow: 0 0 0 6px rgba(126, 231, 135, 0); }
+@keyframes tick-opacity {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.7; }
 }
 
 /* Sección volumen: idéntico styling a tempo-section */
@@ -174,16 +175,17 @@ button.primary { background: var(--accent); color: #1a120a; border-color: var(--
 button.primary:hover { filter: brightness(1.1); }
 button.primary.big { padding: 10px 22px; font-size: 15px; min-width: 100px; }
 
-/* Play en estado activo: pulsa visualmente */
+/* Play en estado activo: pulsa con opacity (GPU, sin repaint del entorno) */
 button.primary.active {
   background: var(--danger);
   border-color: var(--danger);
   color: #2a0a0a;
-  animation: pulse 0.9s ease-in-out infinite;
+  animation: pulse-opacity 1.1s ease-in-out infinite;
+  will-change: opacity;
 }
-@keyframes pulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(255, 107, 107, 0.5); }
-  50%      { box-shadow: 0 0 0 10px rgba(255, 107, 107, 0); }
+@keyframes pulse-opacity {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.82; }
 }
 
 button.flash {
@@ -291,40 +293,62 @@ button.flash {
 .cheatsheet {
   background: var(--bg-2);
   border-top: 1px solid var(--border);
-  padding: 8px 12px;
+  padding: 10px 14px 14px;
   font-size: 12px;
 }
 .cheatsheet > summary {
   cursor: pointer;
-  color: var(--text-dim);
+  color: var(--accent);
   user-select: none;
-  padding: 4px 0;
+  padding: 6px 0;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.6px;
-  font-size: 11px;
+  font-size: 12px;
 }
-.cheatsheet > summary:hover { color: var(--accent); }
+.cheatsheet > summary:hover { color: var(--text); }
+
+.cheat-section {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--border);
+}
+.cheat-section h3 {
+  margin: 0 0 8px;
+  font-size: 12px;
+  color: var(--text);
+  font-weight: 600;
+  letter-spacing: 0.2px;
+}
 .cheat-grid {
   display: grid;
-  grid-template-columns: minmax(0, max-content) minmax(0, 1fr);
-  gap: 4px 12px;
-  margin-top: 8px;
-  padding-top: 8px;
-  border-top: 1px dashed var(--border);
+  grid-template-columns: minmax(120px, max-content) minmax(0, 1fr);
+  gap: 6px 14px;
   font-family: var(--mono);
 }
 .cheat-grid code {
   background: var(--bg-3);
-  padding: 2px 6px;
-  border-radius: 3px;
+  padding: 3px 8px;
+  border-radius: 4px;
   color: var(--accent-2);
-  font-size: 11px;
+  font-size: 11.5px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  cursor: help;                  /* pista visual de que hay tooltip */
+  border: 1px solid transparent;
+  transition: border-color 0.12s;
 }
-.cheat-grid span { color: var(--text-dim); align-self: center; font-family: system-ui, sans-serif; }
+.cheat-grid code:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.cheat-grid span {
+  color: var(--text-dim);
+  align-self: center;
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 12px;
+}
 
 /* ─── Side pane ────────────────────────────────────────────── */
 .side-pane {
@@ -381,7 +405,6 @@ button.flash {
   border: 1px solid var(--border);
   border-radius: 4px;
   cursor: pointer;
-  transition: background 0.05s linear;
   touch-action: none;
 }
 .grid .cell.on { background: var(--accent); border-color: var(--accent); }
@@ -473,9 +496,13 @@ button.flash {
   background: var(--bg);
   border-radius: 6px;
   margin-bottom: 6px;
+  /* compositor estable, sin re-layout al pintar la onda */
+  contain: strict;
+  will-change: transform;
+  transform: translateZ(0);
 }
-#waveform { height: 130px; }
-#spectrum { height: 70px; }
+#waveform { height: 130px; contain-intrinsic-size: 600px 130px; }
+#spectrum { height: 70px; contain-intrinsic-size: 600px 70px; }
 
 /* ───────────────────────────────────────────────────────────── */
 /* Tablet / móvil: <= 1100px → columna única                     */
@@ -548,8 +575,10 @@ button.flash {
   #waveform { height: 110px; }
   #spectrum { height: 60px; }
 
-  .cheat-grid { grid-template-columns: 1fr; gap: 2px 0; }
-  .cheat-grid code { white-space: normal; }
+  .cheat-grid { grid-template-columns: 1fr; gap: 6px 0; }
+  .cheat-grid code { white-space: normal; word-break: break-word; }
+  .cheat-grid span { font-size: 11px; padding-bottom: 4px; border-bottom: 1px solid var(--border); }
+  .cheat-section h3 { font-size: 11px; }
 }
 
 /* Móvil muy pequeño: <= 380px */

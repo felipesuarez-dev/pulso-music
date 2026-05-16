@@ -153,31 +153,38 @@ export const EXAMPLES: Example[] = [
     id: "tren-al-sur",
     name: "🇨🇱 Tren al Sur — Los Prisioneros (homenaje)",
     code:
-`// Homenaje synth-pop a 'Tren al Sur' de Los Prisioneros (1990).
-// Drum machine + bajo arpegiado + acordes synth + melodía en Em.
+`// Homenaje a 'Tren al Sur' (Los Prisioneros, 1990).
+// Synth-pop en MI menor (Em). Progresión clásica: Em - DO - SOL - RE (i - VI - III - VII).
+// El bajo machaca el tonic ochenta-style; el arp recorre el acorde; el lead canta el motivo.
 pulso()
-  .bpm(118)
+  .bpm(120)
   .track('drums')
     .drum('kick').pattern('x...x...x...x...')
     .drum('snare').pattern('....x.......x...')
-    .drum('hat').pattern('x.x.x.x.x.x.x.x.').volume(0.45)
-  .track('clap').volume(0.4)
-    .drum('clap').pattern('....x.......x...').every(2)
+    .drum('hat').pattern('xxxxxxxxxxxxxxxx').volume(0.4)
   .track('bajo').volume(0.9)
-    .synth('sawtooth')
-      .scale('Em')
-      .notes('1 . 1 . 5 . 1 . 1 . 1 . 5 . 1 b7')
-      .filter(440).release(0.18).octave(2)
-  .track('acordes').pan(-0.35).volume(0.55)
     .synth('square')
       .scale('Em')
-      .notes("1 b3 5 1' 5 b3 1 5 1 b3 5 1' 5 b3 1 5")
-      .filter(2000).release(0.15)
-  .track('lead').pan(0.4).volume(0.6)
+      // Em (1) → C (b6) → G (b3) → D (b7) en grados de Em
+      .notes('1 1 1 1 b6 b6 b6 b6 b3 b3 b3 b3 b7 b7 b7 b7')
+      .filter(440).release(0.2).octave(2)
+  .track('arp').pan(-0.4).volume(0.55)
+    .synth('square')
+      .scale('Em')
+      // arpegio cíclico que sigue los cambios de acorde
+      .notes("1 b3 5 b3 b6, 1 b3 1 b3 5 b7 5 b7 2 4 2")
+      .filter(2100).release(0.12)
+  .track('lead').pan(0.4).volume(0.7)
     .synth('triangle')
-      .scale('Em pent')
-      .notes("5' . . 4' . b3' . 1' . . . b7 . 5 . .")
-      .every(2).filter(2800).release(0.5)
+      .scale('Em')
+      // motivo descendente del coro, con sostenidos para que respire
+      .notes("5 5 b3 1 _ b3 4 5 _ 4 b3 1 _ b7 1 _")
+      .filter(2500).attack(0.02).release(0.45)
+  .track('pad').pan(0).volume(0.4)
+    .synth('sawtooth')
+      .scale('Em')
+      .notes("1 _ _ _ b6 _ _ _ b3 _ _ _ b7 _ _ _")
+      .filter(1400).attack(0.3).release(1.2)
   .play();
 `,
   },
@@ -185,33 +192,38 @@ pulso()
     id: "himno-chile",
     name: "🇨🇱 Himno Nacional de Chile (homenaje)",
     code:
-`// Homenaje al Himno Nacional de Chile.
-// Marcha lenta en DO mayor con bombo, cuerdas, bajo y melodía.
+`// Homenaje al Himno Nacional de Chile (Ramón Carnicer, 1828).
+// Marcha solemne en DO mayor — bombo en cada beat, melodía hymnal con
+// frase "Puro Chile, es tu cielo azulado": SOL SOL MI DO — DO RE MI FA SOL — bajada a DO.
 pulso()
-  .bpm(76)
+  .bpm(72)
   .track('marcha')
     .drum('kick').pattern('x...x...x...x...').volume(0.7)
-    .drum('snare').pattern('..x...x...x...x.').volume(0.4)
-  .track('melodia').volume(0.75)
+    .drum('snare').pattern('..x...x...x...x.').volume(0.35)
+  .track('melodia').volume(0.85)
     .synth('triangle')
       .scale('DO mayor')
-      .notes("5 5 . 3 4 5 . 1' 7 1' 2' . 1' 7 6 5")
-      .filter(2400).attack(0.04).release(0.45)
+      // "Pu-ro Chi-le, es tu cie-lo a-zu-la-do"
+      //   5  5  3  1   1  2  3  4  5  4  3  2  1  _  _  _
+      .notes("5 5 3 1 _ 1 2 3 4 5 4 3 2 1 _ _")
+      .filter(2400).attack(0.04).release(0.55)
   .track('bajo').volume(0.85)
     .synth('triangle')
       .scale('DO mayor')
-      .notes('1 _ _ _ 5 _ _ _ 6 _ _ _ 5 _ _ _')
-      .filter(620).release(0.6).octave(2)
-  .track('cuerdas').pan(-0.35).volume(0.55)
+      // I - V - IV - I (DO - SOL - FA - DO)
+      .notes('1 _ _ _ 5 _ _ _ 4 _ _ _ 1 _ _ _')
+      .filter(620).release(0.7).octave(2)
+  .track('cuerdas').pan(-0.35).volume(0.6)
     .synth('sine')
       .scale('DO mayor')
-      .notes("1 _ _ _ 3 _ _ _ 4 _ _ _ 3 _ _ _")
-      .filter(1700).attack(0.25).release(1.2)
-  .track('contramelodia').pan(0.4).volume(0.5)
-    .synth('sine')
+      // Triada interna: 3 - 7 - 6 - 5 (movimiento por grados conjuntos)
+      .notes("3 _ _ _ 7 _ _ _ 6 _ _ _ 5 _ _ _")
+      .filter(1700).attack(0.3).release(1.4)
+  .track('coro').pan(0.35).volume(0.5)
+    .synth('triangle')
       .scale('DO mayor')
-      .notes("3 _ . 1 2 3 _ 5 4 5 6 _ 5 4 3 2")
-      .filter(2200).attack(0.1).release(0.6)
+      .notes("1' _ _ _ 5 _ _ _ 6 _ _ _ 5 _ _ _")
+      .filter(2000).attack(0.2).release(1.0)
   .play();
 `,
   },

@@ -6,6 +6,8 @@ export class Visualizer {
   private rafId = 0;
   private timeBuf: Uint8Array;
   private freqBuf: Uint8Array;
+  private lastDrawAt = 0;
+  private readonly minFrameMs = 33; // throttle a ~30fps
 
   constructor(
     private readonly waveCanvas: HTMLCanvasElement,
@@ -24,11 +26,13 @@ export class Visualizer {
 
   start(): void {
     if (this.rafId) return;
-    const draw = () => {
+    const draw = (now: number) => {
       this.rafId = requestAnimationFrame(draw);
+      if (now - this.lastDrawAt < this.minFrameMs) return;
+      this.lastDrawAt = now;
       this.tick();
     };
-    draw();
+    this.rafId = requestAnimationFrame(draw);
   }
 
   stop(): void {

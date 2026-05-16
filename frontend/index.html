@@ -104,22 +104,211 @@
       <textarea id="editor" spellcheck="false" autocapitalize="off" autocorrect="off"
                 title="Edita el código TypeScript. Ctrl+Enter para tocar; Tab inserta 2 espacios"></textarea>
       <pre id="error-panel" class="error hidden"></pre>
-      <details class="cheatsheet">
-        <summary data-i18n="cheatsheet">Cheatsheet del DSL</summary>
-        <div class="cheat-grid">
-          <code>.bpm(120)</code>                      <span>Tempo en pulsaciones por minuto.</span>
-          <code>.track('drums')</code>                <span>Crea o cambia a una pista con ese nombre.</span>
-          <code>.volume(0.7) .pan(-0.3)</code>        <span>Nivel y posición estéreo de la pista activa.</span>
-          <code>.mute() .solo()</code>                <span>Silenciar/aislar pista activa.</span>
-          <code>.drum('kick')</code>                  <span>Nueva voz drum (kick, snare, hat o clap).</span>
-          <code>.synth('sawtooth')</code>             <span>Nueva voz sintética (sine, square, sawtooth, triangle).</span>
-          <code>.pattern('x...x...x...x...')</code>   <span>16 steps; x=hit, .=silencio.</span>
-          <code>.notes('c4 d#4 sol4 do5')</code>      <span>Notas absolutas (anglo o latina, mezclables).</span>
-          <code>.scale('Cm pent') .notes("1 b3 5 1'")</code> <span>Escala + grados (1=tónica, ' octava arriba).</span>
-          <code>.filter(800)</code>                   <span>Frecuencia de corte del lowpass.</span>
-          <code>.attack/decay/sustain/release</code>  <span>Envelope ADSR del synth.</span>
-          <code>.every(2)</code>                      <span>Esta voz suena 1 de cada N ciclos.</span>
-          <code>.octave(3)</code>                     <span>Octava base para grados de escala.</span>
+      <details class="cheatsheet" open>
+        <summary data-i18n="cheatsheet">Cheatsheet del DSL — pasa el mouse sobre cualquier elemento para más info</summary>
+
+        <div class="cheat-section">
+          <h3>🎛️ Estructura</h3>
+          <div class="cheat-grid">
+            <code title="Inicia una nueva sesión. Devuelve un objeto encadenable. Siempre va primero.">pulso()</code>
+            <span>Crea la sesión.</span>
+
+            <code title="Tempo en pulsaciones por minuto. Rango válido 20-400. Default 120. Editable en vivo desde la UI.">.bpm(120)</code>
+            <span>Tempo.</span>
+
+            <code title="Crea o selecciona una pista por nombre. Las voces (.drum/.synth) declaradas a continuación se agrupan en ella. Si la llamas dos veces con el mismo nombre, sigue agregando voces a esa pista.">.track('drums')</code>
+            <span>Crea/selecciona pista.</span>
+
+            <code title="Entrega la sesión al motor de audio. Llámala una sola vez, al final del encadenamiento.">.play()</code>
+            <span>Inicia el playback.</span>
+          </div>
+        </div>
+
+        <div class="cheat-section">
+          <h3>🎚️ Modificadores de pista</h3>
+          <div class="cheat-grid">
+            <code title="Volumen de la pista activa. Rango 0-1.5 (puedes pasar de 1 para boost). Default 1.">.volume(0.7)</code>
+            <span>Nivel de la pista.</span>
+
+            <code title="Posición estéreo. -1 = todo a la izquierda, 0 = centro, 1 = todo a la derecha. Útil para separar instrumentos visualmente.">.pan(-0.3)</code>
+            <span>Pan estéreo.</span>
+
+            <code title="Silencia la pista activa hasta que toggleas Mute desde el mixer o vuelves a evaluar.">.mute()</code>
+            <span>Mute.</span>
+
+            <code title="Solo: si alguna pista está en solo, todas las demás se silencian. Útil para aislar elementos al componer.">.solo()</code>
+            <span>Solo (aísla).</span>
+          </div>
+        </div>
+
+        <div class="cheat-section">
+          <h3>🥁 Drums (4 voces, todas sintetizadas)</h3>
+          <div class="cheat-grid">
+            <code title="Bombo: oscilador sine con sweep de frecuencia 150→40 Hz en 80 ms + envelope rápido. Sin samples — todo síntesis. Suena como un kick analógico.">.drum('kick')</code>
+            <span>Bombo (sine sweep).</span>
+
+            <code title="Caja/redoblante: ruido blanco filtrado highpass (1.2 kHz) + body con oscilador triangle a 200→120 Hz. Suena como un snare acústico.">.drum('snare')</code>
+            <span>Caja (ruido + body).</span>
+
+            <code title="Hi-hat: ruido blanco filtrado highpass a 7 kHz con envelope muy corto (30 ms). El sonido típico de plato cerrado.">.drum('hat')</code>
+            <span>Charles (ruido HF).</span>
+
+            <code title="Aplauso: 3 bursts cortos de ruido bandpass (1.2 kHz) separados por 12 ms. Imita el efecto de palmadas múltiples.">.drum('clap')</code>
+            <span>Palmada (3 bursts).</span>
+          </div>
+        </div>
+
+        <div class="cheat-section">
+          <h3>🎹 Synths (4 tipos de onda)</h3>
+          <div class="cheat-grid">
+            <code title="Onda sinusoidal pura. Sin armónicos. Sonido suave, redondo. Ideal para bajos sub, pads, flautas.">.synth('sine')</code>
+            <span>Sine (suave).</span>
+
+            <code title="Onda cuadrada. Sólo armónicos impares. Sonido tipo 8-bit, retro, característico de chiptune (Game Boy, NES).">.synth('square')</code>
+            <span>Square (8-bit).</span>
+
+            <code title="Onda diente de sierra. Todos los armónicos. Sonido brillante, agresivo. Ideal para leads y bajos sintéticos clásicos.">.synth('sawtooth')</code>
+            <span>Saw (brillante).</span>
+
+            <code title="Onda triangular. Pocos armónicos impares y suaves. Más cuerpo que la sine, más dulce que la saw. Buena para leads melódicas.">.synth('triangle')</code>
+            <span>Triangle (dulce).</span>
+          </div>
+        </div>
+
+        <div class="cheat-section">
+          <h3>⚙️ Modificadores de synth</h3>
+          <div class="cheat-grid">
+            <code title="Frecuencia de corte del filtro lowpass en Hz. Default 8000 (abierto). Valores bajos (300-600) = sonido oscuro. Valores altos (3000+) = brillante.">.filter(800)</code>
+            <span>Lowpass cutoff (Hz).</span>
+
+            <code title="Attack del envelope ADSR en segundos. Tiempo hasta el pico. Default 0.005 (instantáneo). Valores altos = 'fade in' suave (pads).">.attack(0.01)</code>
+            <span>Ataque (s).</span>
+
+            <code title="Decay del envelope ADSR en segundos. Tiempo del pico hasta el sustain level. Default 0.08.">.decay(0.1)</code>
+            <span>Decay (s).</span>
+
+            <code title="Sustain del envelope ADSR. Nivel mantenido durante la nota (0-1). Default 0.6.">.sustain(0.6)</code>
+            <span>Sustain (0-1).</span>
+
+            <code title="Release del envelope ADSR en segundos. Tiempo de fade-out al soltar. Default 0.2. Valores altos = colas largas (reverb-like).">.release(0.3)</code>
+            <span>Release (s).</span>
+
+            <code title="Octava base para grados de escala. Default 4. Si pones .octave(2) los grados resuenan dos octavas más abajo (graves).">.octave(4)</code>
+            <span>Octava base.</span>
+
+            <code title="Esta voz suena 1 de cada N ciclos. .every(2) = cada 2 ciclos. Útil para introducir variaciones cada cierto tiempo.">.every(2)</code>
+            <span>Cadencia cíclica.</span>
+
+            <code title="Cambia el tipo de onda en caliente. Equivalente a redefinir .synth() pero más conciso.">.wave('saw')</code>
+            <span>Cambia onda.</span>
+          </div>
+        </div>
+
+        <div class="cheat-section">
+          <h3>🎼 Patterns (rítmica)</h3>
+          <div class="cheat-grid">
+            <code title="16 caracteres = 1 ciclo (4 beats × 4 sixteenths). Aceptados: x=hit, .=silencio, _=silencio. Los espacios se ignoran. Sincronizado con la grid visual.">.pattern('x...x...x...x...')</code>
+            <span>Kick clásico.</span>
+
+            <code title="Snare en los backbeats (2 y 4).">.pattern('....x.......x...')</code>
+            <span>Snare backbeat.</span>
+
+            <code title="Hi-hat en cada 8th note. 8 hits por ciclo.">.pattern('x.x.x.x.x.x.x.x.')</code>
+            <span>Hi-hat 8th.</span>
+
+            <code title="Roll constante: un hit en cada sixteenth note. 16 hits por ciclo. Usado para builds y trap.">.pattern('xxxxxxxxxxxxxxxx')</code>
+            <span>Roll 16th.</span>
+
+            <code title="Dembow/reggaeton típico.">.pattern('x..x..x..x..x...')</code>
+            <span>Dembow.</span>
+          </div>
+        </div>
+
+        <div class="cheat-section">
+          <h3>🎵 Notas — anglo y latina (mezclables)</h3>
+          <div class="cheat-grid">
+            <code title="Notación anglosajona: A B C D E F G + #/b para sostenido/bemol. Octava sufijo numérico (default 4). C4 = MIDI 60 = DO central.">C4 D#4 Bb4 G5</code>
+            <span>Anglo (con #/b).</span>
+
+            <code title="Notación latina/solfeo: DO RE MI FA SOL LA SI. Mismo formato que anglo: DO#4, REb5, etc. Equivalente bit-a-bit.">DO4 RE#4 SIb4 SOL5</code>
+            <span>Latina (solfeo).</span>
+
+            <code title="Una secuencia puede mezclar libremente ambas notaciones. El parser entiende cualquiera. La UI muestra todo según el selector global de Notación.">.notes('do4 e4 sol4 c5')</code>
+            <span>Mezcla válida.</span>
+
+            <code title="Sin sufijo de octava asume octava 4. Tres maneras de escribir DO central: C4 / c4 / DO4 / do4 / C (asume 4).">.notes('c d e f g')</code>
+            <span>Sin octava → 4.</span>
+          </div>
+        </div>
+
+        <div class="cheat-section">
+          <h3>🎚️ Escalas (las 11 disponibles)</h3>
+          <div class="cheat-grid">
+            <code title="Escala mayor: 1,2,3,4,5,6,7. La 'feliz' clásica. Alias: major, mayor, M.">'C major'</code>
+            <span>Mayor (jónica).</span>
+
+            <code title="Escala menor natural: 1,2,b3,4,5,b6,b7. La triste clásica. Alias: minor, menor, m.">'Cm'</code>
+            <span>Menor natural.</span>
+
+            <code title="Pentatónica menor: 1,b3,4,5,b7. 5 notas. Imposible sonar mal. Base del rock, blues, pop.">'Cm pent'</code>
+            <span>Pentatónica menor.</span>
+
+            <code title="Pentatónica mayor: 1,2,3,5,6. Sabor folk/country/oriental.">'C M pentatonic'</code>
+            <span>Pentatónica mayor.</span>
+
+            <code title="Escala de blues: 1,b3,4,b5,5,b7. La pentatónica menor con la 'blue note' (b5).">'C blues'</code>
+            <span>Blues.</span>
+
+            <code title="Menor armónica: 1,2,b3,4,5,b6,7. Como la menor pero con séptima mayor. Sabor árabe/clásico.">'C harmonicMinor'</code>
+            <span>Menor armónica.</span>
+
+            <code title="Modo dórico: 1,2,b3,4,5,6,b7. Menor con sexta mayor. Sabor jazz/medieval. Alias: dórico.">'C dorian'</code>
+            <span>Dórica.</span>
+
+            <code title="Modo mixolidio: 1,2,3,4,5,6,b7. Mayor con séptima menor. Sabor rock/country. Alias: mixolidio.">'C mixolydian'</code>
+            <span>Mixolidia.</span>
+
+            <code title="Modo frigio: 1,b2,b3,4,5,b6,b7. Sabor flamenco/español. Alias: frigio.">'C phrygian'</code>
+            <span>Frigia (flamenco).</span>
+
+            <code title="Modo lidio: 1,2,3,#4,5,6,7. Mayor con cuarta aumentada. Sabor etéreo/cinemático. Alias: lidio.">'C lydian'</code>
+            <span>Lidia.</span>
+
+            <code title="Las 12 notas. Sin restricción. Útil para pasos cromáticos. Alias: cromática.">'C chromatic'</code>
+            <span>Cromática (12 notas).</span>
+          </div>
+        </div>
+
+        <div class="cheat-section">
+          <h3>🔢 Grados de escala (con .scale)</h3>
+          <div class="cheat-grid">
+            <code title="Tónica de la escala. Si .scale('Cm') entonces 1 = C en la octava base (default 4) = MIDI 60.">1</code>
+            <span>Tónica.</span>
+
+            <code title="Grados 2-7 corresponden a las notas de la escala en orden. En Cm: 1=C, 2=D, b3=Eb, 4=F, 5=G, b6=Ab, b7=Bb.">3, 5, 7</code>
+            <span>Otros grados.</span>
+
+            <code title="Sostenido aplicado al grado (sube 1 semitono). Doble: ##5 (sube 2 semitonos).">#5</code>
+            <span>Alteración +1.</span>
+
+            <code title="Bemol aplicado al grado (baja 1 semitono). Doble: bb7.">b3</code>
+            <span>Alteración -1.</span>
+
+            <code title="Apóstrofo = una octava arriba. Apila para más: 1'' = dos octavas arriba.">1'</code>
+            <span>Octava ↑.</span>
+
+            <code title="Coma = una octava abajo. Apila: 1,, = dos octavas abajo.">1,</code>
+            <span>Octava ↓.</span>
+
+            <code title="Equivale a 1' (la octava). 9 = 2', 10 = 3', etc.">8, 9, 10</code>
+            <span>Sobrepasa octava.</span>
+
+            <code title="Sustain: no dispara nueva nota en este step (continúa la previa).">_</code>
+            <span>Sustain.</span>
+
+            <code title="Silencio: ningún sonido en este step.">.</code>
+            <span>Silencio.</span>
+          </div>
         </div>
       </details>
     </section>

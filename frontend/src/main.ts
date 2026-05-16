@@ -169,7 +169,7 @@ function bootstrap(): void {
     editor.setCode(ex.code);
     runOnce(ex.code);
     positionCursorOnPattern();
-    selExamples.value = "";
+    // queda seleccionado en el combo para que veas qué ejemplo cargaste.
   });
 
   // Master volume — persiste en localStorage
