@@ -90,22 +90,32 @@ case "$cmd" in
     : "${GITEA_URL:?Falta GITEA_URL en .env}"
     : "${GITEA_USER:?Falta GITEA_USER en .env}"
     : "${GITEA_TOKEN:?Falta GITEA_TOKEN en .env}"
+    # GITEA_OWNER: organización o usuario bajo el que vive el repo en Gitea.
+    # Si está vacío, se usa GITEA_USER (repo personal del usuario autenticado).
+    owner="${GITEA_OWNER:-$GITEA_USER}"
     repo_name="${GITEA_REPO:-$(basename "$ROOT")}"
-    echo "→ Verificando/creando repo $GITEA_USER/$repo_name en Gitea..."
+    echo "→ Verificando/creando repo $owner/$repo_name en Gitea..."
+    # Si owner != user autenticado, asumimos que es una organización.
+    if [[ "$owner" != "$GITEA_USER" ]]; then
+      create_endpoint="$GITEA_URL/api/v1/orgs/$owner/repos"
+    else
+      create_endpoint="$GITEA_URL/api/v1/user/repos"
+    fi
     curl -fsSL -X POST \
       -H "Authorization: token $GITEA_TOKEN" \
       -H "Content-Type: application/json" \
-      "$GITEA_URL/api/v1/user/repos" \
+      "$create_endpoint" \
       -d "{\"name\":\"$repo_name\",\"description\":\"Pulso — entorno de live coding musical en TypeScript\",\"private\":false,\"auto_init\":false}" \
       >/dev/null 2>&1 || echo "  (ya existía o falló creación — continúo con push)"
-    remote_url="${GITEA_URL%/}/$GITEA_USER/$repo_name.git"
+    remote_url="${GITEA_URL%/}/$owner/$repo_name.git"
     auth_url="${GITEA_URL%/}"
     auth_url="${auth_url/http:\/\//http://$GITEA_USER:$GITEA_TOKEN@}"
     auth_url="${auth_url/https:\/\//https://$GITEA_USER:$GITEA_TOKEN@}"
-    auth_url="$auth_url/$GITEA_USER/$repo_name.git"
+    auth_url="$auth_url/$owner/$repo_name.git"
     git remote remove gitea 2>/dev/null || true
     git remote add gitea "$auth_url"
     git push -u gitea main
+    git push gitea --tags
     git remote set-url gitea "$remote_url"
     echo "✓ Gitea: $remote_url"
     ;;
