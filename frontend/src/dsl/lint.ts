@@ -76,16 +76,10 @@ export function lintCode(code: string): Lint[] {
     }
   }
 
-  // 3) comillas desbalanceadas (en cada línea, conteo simple)
-  for (let i = 0; i < lines.length; i++) {
-    const ln = lines[i] ?? "";
-    // ignora cadena dentro de strings con escape básico
-    const stripped = ln.replace(/\\['"]/g, "");
-    const single = (stripped.match(/'/g) ?? []).length;
-    const double = (stripped.match(/"/g) ?? []).length;
-    if (single % 2 !== 0) out.push({ severity: "error", line: i + 1, message: "Comilla simple ' sin cerrar." });
-    if (double % 2 !== 0) out.push({ severity: "error", line: i + 1, message: "Comilla doble \" sin cerrar." });
-  }
+  // 3) comillas desbalanceadas — tokenizer que respeta strings y comentarios.
+  //    Un `'` dentro de un string `"..."` NO es una comilla suelta. Un `'`
+  //    en un grado como `1'` dentro de `.notes("1' 5")` tampoco.
+  out.push(...findUnclosedQuotes(code));
 
   // 4) pattern con chars raros
   const patRe = /\.pattern\(\s*['"]([^'"]*)['"]/g;
@@ -163,6 +157,71 @@ export function lintCode(code: string): Lint[] {
 
 function sevWeight(s: Severity): number {
   return s === "error" ? 0 : s === "warn" ? 1 : 2;
+}
+
+// Tokenizer-lite que respeta strings y comentarios. Recorre el código y
+// detecta cuándo una comilla abre pero no cierra antes del fin de línea
+// (los strings JS con ' o " no pueden cruzar líneas) o fin de archivo.
+function findUnclosedQuotes(code: string): Lint[] {
+  const lints: Lint[] = [];
+  let i = 0;
+  while (i < code.length) {
+    const c = code[i];
+    // // comentario
+    if (c === "/" && code[i + 1] === "/") {
+      while (i < code.length && code[i] !== "\n") i++;
+      continue;
+    }
+    // /* */ comentario
+    if (c === "/" && code[i + 1] === "*") {
+      i += 2;
+      while (i < code.length - 1 && !(code[i] === "*" && code[i + 1] === "/")) i++;
+      i += 2;
+      continue;
+    }
+    // string ' o "
+    if (c === "'" || c === '"') {
+      const quote = c;
+      const startIdx = i;
+      i++;
+      let closed = false;
+      while (i < code.length) {
+        if (code[i] === "\\") { i += 2; continue; }
+        if (code[i] === "\n") break; // strings con ' o " no cruzan líneas
+        if (code[i] === quote) { closed = true; i++; break; }
+        i++;
+      }
+      if (!closed) {
+        lints.push({
+          severity: "error",
+          ...lineColAt(code, startIdx),
+          message: `Comilla ${quote === "'" ? "simple '" : 'doble "'} sin cerrar`,
+        });
+      }
+      continue;
+    }
+    // template literal ` (puede cruzar líneas)
+    if (c === "`") {
+      const startIdx = i;
+      i++;
+      let closed = false;
+      while (i < code.length) {
+        if (code[i] === "\\") { i += 2; continue; }
+        if (code[i] === "`") { closed = true; i++; break; }
+        i++;
+      }
+      if (!closed) {
+        lints.push({
+          severity: "error",
+          ...lineColAt(code, startIdx),
+          message: "Template literal ` sin cerrar",
+        });
+      }
+      continue;
+    }
+    i++;
+  }
+  return lints;
 }
 
 function lineColAt(text: string, index: number): { line: number; col: number } {

@@ -58,6 +58,11 @@ export class Transport {
     this.btnPlay.classList.remove("active");
   }
 
+  // Llamable desde fuera para forzar pausa (p. ej. al detectar error de código).
+  pauseIfPlaying(): void {
+    if (this.playing) this.stop();
+  }
+
   private evaluate(): void {
     this.onEval();
     // pequeño flash visual al evaluar

@@ -134,11 +134,14 @@ function bootstrap(): void {
     for (const l of lints) {
       appendConsole(l.severity === "warn" ? "warn" : "error", l.line, l.message);
     }
-    // 2. eval — si hay errores de linter, NO ejecutamos para no romper la sesión
+    // 2. eval — si hay errores de linter, NO ejecutamos y PARAMOS playback
     if (lintErrors.length > 0) {
-      const errLines = new Set(lints.filter((l) => l.severity === "error").map((l) => l.line));
+      const errLines = new Set(lintErrors.map((l) => l.line));
       editor.setErrorLines(errLines);
       setStatus(false, lintErrors.length, lintWarns.length);
+      transport.pauseIfPlaying();
+      const first = lintErrors[0]!;
+      editor.jumpToLine(first.line);
       return;
     }
     const result = evalUserCode(code);
@@ -152,6 +155,8 @@ function bootstrap(): void {
       appendConsole("error", result.line, result.error ?? "error");
       editor.setErrorLines(result.line != null ? new Set([result.line]) : new Set());
       setStatus(false, 1, lintWarns.length);
+      transport.pauseIfPlaying();
+      if (result.line != null) editor.jumpToLine(result.line);
     }
   }
 
