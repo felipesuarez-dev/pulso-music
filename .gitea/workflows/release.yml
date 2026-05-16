@@ -164,8 +164,10 @@ jobs:
             manage.sh tsconfig.base.json CLAUDE.md README.md
           ls -lh "pulso-source-${{ needs.prepare.outputs.version }}.tar.gz"
 
+      # Gitea Actions sólo soporta upload/download-artifact hasta v3 (v4+
+      # requiere GitHub Enterprise Server o github.com nativos).
       - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v3
         with:
           name: bundle-artifacts
           path: |
@@ -181,7 +183,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Download bundle artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v3
         with:
           name: bundle-artifacts
           path: ./release-assets
